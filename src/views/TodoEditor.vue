@@ -37,6 +37,17 @@
                   @update:modelValue="onContentChange"
                   style="height: 500px;"
                 />
+                <div v-if="syntaxErrors.length > 0" class="errors">
+                  <h4>语法错误:</h4>
+                  <el-alert
+                    v-for="(error, index) in syntaxErrors"
+                    :key="index"
+                    :title="error.message"
+                    type="error"
+                    :closable="false"
+                    show-icon
+                  ></el-alert>
+                </div>
               </div>
             </el-col>
             
@@ -105,17 +116,6 @@
                   </el-card>
                 </div>
                 
-                <div v-if="syntaxErrors.length > 0" class="errors">
-                  <h4>语法错误:</h4>
-                  <el-alert
-                    v-for="(error, index) in syntaxErrors"
-                    :key="index"
-                    :title="error.message"
-                    type="error"
-                    :closable="false"
-                    show-icon
-                  ></el-alert>
-                </div>
               </div>
             </el-col>
           </el-row>
