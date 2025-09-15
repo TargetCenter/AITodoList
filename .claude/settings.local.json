@@ -8,7 +8,11 @@
       "Bash(npm run dev)",
       "Bash(taskkill:*)",
       "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(findstr:*)",
+      "Bash(sed:*)",
+      "Bash(cat:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

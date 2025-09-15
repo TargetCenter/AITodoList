@@ -11,8 +11,8 @@ export function parseMarkdown(markdown) {
   const taskMap = new Map()
   
   lines.forEach((line, index) => {
-    // 匹配待办任务格式: - [ ] 任务名称 @开始时间 用时
-    const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}:\d{2}|\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}))?(?:\s+(\d+(?:\.\d+)?[hmd]))?(?:\s*-&gt;\s*(.+))?$/
+    // 匹配待办任务格式: - [ ] 任务名称 @开始时间 T:用时 ->依赖
+    const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}:\d{2}|\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}))?(?:\s+T:(\d+(?:\.\d+)?[hmd]))?(?:\s*->(.+))?$/
     const match = line.match(taskRegex)
     
     if (match) {
@@ -56,7 +56,7 @@ export function validateSyntax(markdown) {
       if (!/^- \[[ xX]\]/.test(line)) {
         errors.push({
           line: lineNumber + 1,
-          message: '复选框格式错误，应为 [ ] 或 [x]'
+          message: '复选框格式错误，应为[ ] 或[x]'
         })
         return
       }
@@ -69,19 +69,19 @@ export function validateSyntax(markdown) {
         if (!/^(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}:\d{2}|\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})$/.test(timeStr)) {
           errors.push({
             line: lineNumber + 1,
-            message: `时间格式错误: ${timeStr}，应为 YYYY-MM-DD 或 HH:MM`
+            message: `时间格式错误: ${timeStr}，应为YYYY-MM-DD 或HH:MM`
           })
         }
       }
       
       // 检查用时格式
-      const durationMatch = line.match(/(\d+(?:\.\d+)?[hmd])/)
+      const durationMatch = line.match(/T:(\d+(?:\.\d+)?[hmd])/)
       if (durationMatch) {
         const durationStr = durationMatch[1]
         if (!/^\d+(?:\.\d+)?[hmd]$/.test(durationStr)) {
           errors.push({
             line: lineNumber + 1,
-            message: `用时格式错误: ${durationStr}，应为数字+h|m|d (例如 2h, 1.5d)`
+            message: `用时格式错误: T:${durationStr}，应为T:数字+h|m|d (例如 T:2h, T:1.5d)`
           })
         }
       }

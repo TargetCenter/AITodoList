@@ -207,7 +207,7 @@ export default {
         // 查找并更新对应的任务行
         const updatedLines = lines.map(line => {
           // 使用与markdownParser.js中相同的正则表达式来匹配任务
-          const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(.*?))?(?:\s+(.*?))?(?:\s*->\s*(.*?))?$/
+          const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(.*?))?(?:\s+(.*?))?(?:\s*->(.*?))?$/
           const match = line.match(taskRegex)
           
           if (match) {
@@ -249,7 +249,7 @@ export default {
         // 查找并更新对应的任务行
         const updatedLines = lines.map(line => {
           // 使用与markdownParser.js中相同的正则表达式来匹配任务
-          const taskRegex = /^(-\s*\[([ xX])\]\s*)(.+?)(\s+@(.*?))?(?:\s+(.*?))?(?:\s*->\s*(.*?))?$/
+          const taskRegex = /^(-\s*\[([ xX])\]\s*)(.+?)(\s+@(.*?))?(?:\s+(.*?))?(?:\s*->(.*?))?$/
           const match = line.match(taskRegex)
           
           if (match) {
@@ -381,11 +381,11 @@ export default {
     
     onMounted(() => {
       // 初始化示例内容
-      const sampleContent = `- [ ] 设计数据库 @2023-09-15 2h
-- [ ] 开发API接口 @2023-09-16 4h
-- [ ] 前端页面开发 @2023-09-17 3h
-- [x] 项目初始化 @2023-09-14 1h
-- [ ] 部署测试环境 @2023-09-20 2h -> 前端页面开发`
+      const sampleContent = `- [ ] 设计数据库 @2023-09-15 T:2h
+- [ ] 开发API接口 @2023-09-16 T:4h
+- [ ] 前端页面开发 @2023-09-17 T:3h
+- [x] 项目初始化 @2023-09-14 T:1h
+- [ ] 部署测试环境 @2023-09-20 T:2h ->前端页面开发`
       
       // 创建一个默认文件
       fileManager.createFile('默认待办组.md', sampleContent)
