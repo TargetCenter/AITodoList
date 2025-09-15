@@ -50,13 +50,52 @@
                       <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
                     </div>
                     <div class="task-details">
-                      <div v-if="task.startTime">
+                      <div v-if="task.startTime !== null">
                         <i class="el-icon-time"></i>
-                        开始时间: {{ task.startTime }}
+                        开始时间: 
+                        <span v-if="editingTaskId !== task.id || editingField !== 'startTime'" @click="startEditing(task, 'startTime')">
+                          {{ task.startTime || '未设置' }}
+                        </span>
+                        <span v-else>
+                          <el-date-picker
+                            v-model="editingValue"
+                            type="datetime"
+                            placeholder="选择日期时间"
+                            size="small"
+                            style="width: 180px;"
+                            @change="saveEditing(task)"
+                            @blur="saveEditing(task)"
+                            @keyup.esc="cancelEditing"
+                            ref="editInput"
+                          ></el-date-picker>
+                        </span>
                       </div>
-                      <div v-if="task.duration">
+                      <div v-if="task.duration !== null">
                         <i class="el-icon-timer"></i>
-                        用时: {{ task.duration }}
+                        用时: 
+                        <span v-if="editingTaskId !== task.id || editingField !== 'duration'" @click="startEditing(task, 'duration')">
+                          {{ task.duration || '未设置' }}
+                        </span>
+                        <span v-else>
+                          <el-input 
+                            v-model="editingValue" 
+                            size="small" 
+                            style="width: 100px;"
+                            placeholder="例如: 2h, 1.5d"
+                            @keyup.enter="saveEditing(task)"
+                            @blur="saveEditing(task)"
+                            @keyup.esc="cancelEditing"
+                            ref="editInput"
+                          >
+                            <template #append>
+                              <el-select v-model="durationUnit" style="width: 70px;">
+                                <el-option label="小时" value="h"></el-option>
+                                <el-option label="天" value="d"></el-option>
+                                <el-option label="月" value="m"></el-option>
+                              </el-select>
+                            </template>
+                          </el-input>
+                        </span>
                       </div>
                       <div v-if="task.dependencies.length > 0">
                         <i class="el-icon-link"></i>
@@ -143,6 +182,12 @@ export default {
     const currentFile = computed(() => fileManager.getCurrentFile())
     const fileList = computed(() => fileManager.getFileList())
     
+    // 编辑状态管理
+    const editingTaskId = ref(null)
+    const editingField = ref('')
+    const editingValue = ref('')
+    const durationUnit = ref('h')
+    
     const onContentChange = () => {
       // 实时解析Markdown内容
       try {
@@ -186,6 +231,91 @@ export default {
       } catch (error) {
         console.error('更新任务状态时出错:', error)
       }
+    }
+    
+    // 开始编辑字段
+    const startEditing = (task, field) => {
+      editingTaskId.value = task.id
+      editingField.value = field
+      editingValue.value = task[field] || ''
+    }
+    
+    // 保存编辑的字段
+    const saveEditing = (task) => {
+      try {
+        // 将当前的Markdown内容分割成行
+        const lines = markdownContent.value.split('\n')
+        
+        // 查找并更新对应的任务行
+        const updatedLines = lines.map(line => {
+          // 使用与markdownParser.js中相同的正则表达式来匹配任务
+          const taskRegex = /^(-\s*\[([ xX])\]\s*)(.+?)(\s+@(.*?))?(?:\s+(.*?))?(?:\s*->\s*(.*?))?$/
+          const match = line.match(taskRegex)
+          
+          if (match) {
+            const [, taskPrefix, checked, title, timePart, time, duration, dependencies] = match
+            // 检查标题是否匹配
+            if (title.trim() === task.title.trim()) {
+              // 根据编辑的字段更新相应内容
+              if (editingField.value === 'startTime') {
+                // 更新时间
+                let timeValue = editingValue.value
+                // 如果是日期对象，格式化为 YYYY-MM-DD HH:MM
+                if (timeValue instanceof Date) {
+                  const year = timeValue.getFullYear()
+                  const month = String(timeValue.getMonth() + 1).padStart(2, '0')
+                  const day = String(timeValue.getDate()).padStart(2, '0')
+                  const hours = String(timeValue.getHours()).padStart(2, '0')
+                  const minutes = String(timeValue.getMinutes()).padStart(2, '0')
+                  timeValue = `${year}-${month}-${day} ${hours}:${minutes}`
+                }
+                
+                const newTimePart = timeValue ? ` @${timeValue}` : ''
+                if (timePart) {
+                  // 如果原来有时间，替换它
+                  return line.replace(/\s+@.*?(?=\s+[0-9]|$|\s*->)/, newTimePart)
+                } else {
+                  // 如果原来没有时间，添加它
+                  return `${taskPrefix}${title}${newTimePart}${duration ? ` ${duration}` : ''}${dependencies ? ` -> ${dependencies}` : ''}`
+                }
+              } else if (editingField.value === 'duration') {
+                // 更新用时
+                const newDuration = editingValue.value ? ` ${editingValue.value}${durationUnit.value}` : ''
+                if (duration) {
+                  // 如果原来有用时，替换它
+                  return line.replace(/\s+[0-9]+(?:\.[0-9]+)?[hmd]/, newDuration)
+                } else {
+                  // 如果原来没有用时，添加它
+                  return `${taskPrefix}${title}${timePart || ''}${newDuration}${dependencies ? ` -> ${dependencies}` : ''}`
+                }
+              }
+            }
+          }
+          
+          return line
+        })
+        
+        // 更新Markdown内容
+        markdownContent.value = updatedLines.join('\n')
+        
+        // 重置编辑状态
+        editingTaskId.value = null
+        editingField.value = ''
+        editingValue.value = ''
+        durationUnit.value = 'h'
+        
+        // 重新解析内容以确保一致性
+        onContentChange()
+      } catch (error) {
+        console.error('更新任务字段时出错:', error)
+      }
+    }
+    
+    // 取消编辑
+    const cancelEditing = () => {
+      editingTaskId.value = null
+      editingField.value = ''
+      editingValue.value = ''
     }
     
     const checkSyntax = () => {
@@ -273,8 +403,15 @@ export default {
       openFileDialogVisible,
       newFileName,
       selectedFile,
+      editingTaskId,
+      editingField,
+      editingValue,
+      durationUnit,
       onContentChange,
       onTaskStatusChange,
+      startEditing,
+      saveEditing,
+      cancelEditing,
       checkSyntax,
       saveFile,
       viewGraph,
