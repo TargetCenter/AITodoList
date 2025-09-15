@@ -32,18 +32,11 @@
             <el-col :span="12">
               <div class="editor-container">
                 <h3>Markdown 编辑器</h3>
-                <el-input
-                  type="textarea"
+                <code-mirror-editor
                   v-model="markdownContent"
-                  placeholder="请输入待办任务，支持以下语法：
-- [ ] 任务名称 @开始时间 用时
-- [x] 已完成任务 @开始时间 用时
-示例：
-- [ ] 设计数据库 @2023-09-15 2h
-- [ ] 开发API接口 @2023-09-16 4h"
-                  :rows="20"
-                  @input="onContentChange"
-                ></el-input>
+                  @update:modelValue="onContentChange"
+                  style="height: 500px;"
+                />
               </div>
             </el-col>
             
@@ -127,9 +120,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { parseMarkdown, validateSyntax } from '../utils/markdownParser'
 import fileManager from '../utils/fileManager'
+import CodeMirrorEditor from '../components/CodeMirrorEditor.vue'
 
 export default {
   name: 'TodoEditor',
+  components: {
+    CodeMirrorEditor
+  },
   setup() {
     const router = useRouter()
     const markdownContent = ref('')
