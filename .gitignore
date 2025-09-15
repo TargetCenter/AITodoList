@@ -1,0 +1,50 @@
+# Node.js dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables
+.env.local
+.env.*.local
+
+# Vite related files
+.vite/
+*.log
+
+# Vue CLI related
+coverage/
+*.local
+
+# Temporary files
+*.tmp
+*.tmp/
+
+# Miscellaneous
+*.zip
+*.7z
