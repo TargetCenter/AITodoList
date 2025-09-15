@@ -59,10 +59,10 @@
                         <span v-else>
                           <el-date-picker
                             v-model="editingValue"
-                            type="datetime"
-                            placeholder="选择日期时间"
+                            type="date"
+                            placeholder="选择日期"
                             size="small"
-                            style="width: 180px;"
+                            style="width: 120px;"
                             @change="saveEditing(task)"
                             @blur="saveEditing(task)"
                             @keyup.esc="cancelEditing"
@@ -260,14 +260,12 @@ export default {
               if (editingField.value === 'startTime') {
                 // 更新时间
                 let timeValue = editingValue.value
-                // 如果是日期对象，格式化为 YYYY-MM-DD HH:MM
+                // 如果是日期对象，格式化为 YYYY-MM-DD
                 if (timeValue instanceof Date) {
                   const year = timeValue.getFullYear()
                   const month = String(timeValue.getMonth() + 1).padStart(2, '0')
                   const day = String(timeValue.getDate()).padStart(2, '0')
-                  const hours = String(timeValue.getHours()).padStart(2, '0')
-                  const minutes = String(timeValue.getMinutes()).padStart(2, '0')
-                  timeValue = `${year}-${month}-${day} ${hours}:${minutes}`
+                  timeValue = `${year}-${month}-${day}`
                 }
                 
                 const newTimePart = timeValue ? ` @${timeValue}` : ''
