@@ -426,6 +426,7 @@ export default {
 <style scoped>
 .todo-editor {
   height: 100%;
+  overflow-y: auto;
 }
 
 .el-header {
@@ -510,5 +511,78 @@ export default {
 
 .dialog-footer {
   text-align: right;
+}
+
+/* 移动端自适应样式 */
+@media (max-width: 768px) {
+  .el-row {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .el-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 20px;
+  }
+  
+  .editor-container {
+    display: none !important;
+  }
+  
+  .preview-container {
+    width: 100%;
+  }
+  
+  .el-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    line-height: normal;
+  }
+  
+  .header-content {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .toolbar {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .el-main {
+    padding: 10px;
+    overflow-y: auto;
+  }
+  
+  .task-list {
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+  }
+  
+  .task-details {
+    padding-left: 20px;
+  }
+  
+  .task-card {
+    margin-bottom: 10px;
+  }
+  
+  .task-header {
+    flex-wrap: wrap;
+  }
+  
+  .task-header span {
+    margin-left: 8px;
+    font-size: 14px;
+  }
+  
+  h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
 }
 </style>
