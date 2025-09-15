@@ -53,7 +53,7 @@
                 <div class="task-list">
                   <el-card v-for="task in tasks" :key="task.id" class="task-card">
                     <div class="task-header">
-                      <el-checkbox v-model="task.completed"></el-checkbox>
+                      <el-checkbox v-model="task.completed" @change="onTaskStatusChange(task)"></el-checkbox>
                       <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
                     </div>
                     <div class="task-details">
@@ -156,6 +156,41 @@ export default {
       }
     }
     
+    const onTaskStatusChange = (changedTask) => {
+      // 更新Markdown内容以反映任务状态变化
+      try {
+        // 将当前的Markdown内容分割成行
+        const lines = markdownContent.value.split('\n')
+        
+        // 查找并更新对应的任务行
+        const updatedLines = lines.map(line => {
+          // 使用与markdownParser.js中相同的正则表达式来匹配任务
+          const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(.*?))?(?:\s+(.*?))?(?:\s*->\s*(.*?))?$/
+          const match = line.match(taskRegex)
+          
+          if (match) {
+            const [, checked, title] = match
+            // 检查标题是否匹配（去除可能的时间和其他信息后）
+            if (title.trim() === changedTask.title.trim()) {
+              // 根据任务状态更新复选框
+              const newCheckbox = changedTask.completed ? 'x' : ' '
+              return line.replace(/^(-\s*\[)[ xX](\].*)$/, `$1${newCheckbox}$2`)
+            }
+          }
+          
+          return line
+        })
+        
+        // 更新Markdown内容
+        markdownContent.value = updatedLines.join('\n')
+        
+        // 重新解析内容以确保一致性
+        onContentChange()
+      } catch (error) {
+        console.error('更新任务状态时出错:', error)
+      }
+    }
+    
     const checkSyntax = () => {
       syntaxErrors.value = validateSyntax(markdownContent.value)
     }
@@ -242,6 +277,7 @@ export default {
       newFileName,
       selectedFile,
       onContentChange,
+      onTaskStatusChange,
       checkSyntax,
       saveFile,
       viewGraph,
