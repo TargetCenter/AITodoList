@@ -16,7 +16,7 @@ export default {
       default: ''
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'scroll'],
   setup(props, { emit }) {
     const editorContainer = ref(null)
     let view = null
@@ -34,6 +34,34 @@ export default {
             if (update.docChanged) {
               emit('update:modelValue', update.state.doc.toString())
             }
+            // 检查是否是滚动更新
+            if (update.transactions.some(tr => tr.scrollIntoView)) {
+              // 获取滚动信息并触发scroll事件
+              setTimeout(() => {
+                if (view) {
+                  const scroller = view.scrollDOM;
+                  emit('scroll', {
+                    scrollTop: scroller.scrollTop,
+                    scrollHeight: scroller.scrollHeight,
+                    clientHeight: scroller.clientHeight
+                  });
+                }
+              }, 0);
+            }
+            
+            // 检查滚动状态变化
+            if (update.viewportChanged || update.geometryChanged) {
+              setTimeout(() => {
+                if (view) {
+                  const scroller = view.scrollDOM;
+                  emit('scroll', {
+                    scrollTop: scroller.scrollTop,
+                    scrollHeight: scroller.scrollHeight,
+                    clientHeight: scroller.clientHeight
+                  });
+                }
+              }, 0);
+            }
           })
         ]
       })
@@ -46,6 +74,16 @@ export default {
 
     onMounted(() => {
       createEditor()
+      // 添加滚动事件监听
+      if (view) {
+        view.scrollDOM.addEventListener('scroll', () => {
+          emit('scroll', {
+            scrollTop: view.scrollDOM.scrollTop,
+            scrollHeight: view.scrollDOM.scrollHeight,
+            clientHeight: view.scrollDOM.clientHeight
+          });
+        });
+      }
     })
 
     watch(() => props.modelValue, (newValue) => {

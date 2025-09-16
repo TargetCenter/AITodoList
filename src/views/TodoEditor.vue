@@ -35,6 +35,7 @@
                 <code-mirror-editor
                   v-model="markdownContent"
                   @update:modelValue="onContentChange"
+                  @scroll="onEditorScroll"
                   style="height: 500px;"
                 />
                 <div v-if="syntaxErrors.length > 0" class="errors">
@@ -54,7 +55,7 @@
             <el-col :span="12">
               <div class="preview-container">
                 <h3>任务预览</h3>
-                <div class="task-list">
+                <div class="task-list" ref="taskListRef">
                   <el-card v-for="task in tasks" :key="task.id" class="task-card">
                     <div class="task-header">
                       <el-checkbox v-model="task.completed" @change="onTaskStatusChange(task)"></el-checkbox>
@@ -155,7 +156,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { parseMarkdown, validateSyntax } from '../utils/markdownParser'
 import fileManager from '../utils/fileManager'
@@ -187,6 +188,11 @@ export default {
     const editingField = ref('')
     const editingValue = ref('')
     const durationUnit = ref('h')
+    const taskListRef = ref(null)
+    
+    // 滚动同步相关变量
+    const isScrollingEditor = ref(false)
+    const isScrollingPreview = ref(false)
     
     const onContentChange = () => {
       // 实时解析Markdown内容
@@ -196,6 +202,48 @@ export default {
       } catch (error) {
         console.error('解析错误:', error)
       }
+    }
+    
+    // 编辑器滚动处理函数
+    const onEditorScroll = (scrollInfo) => {
+      if (!taskListRef.value || isScrollingPreview.value) return;
+      
+      isScrollingEditor.value = true;
+      
+      // 计算滚动比例
+      const scrollRatio = scrollInfo.scrollTop / (scrollInfo.scrollHeight - scrollInfo.clientHeight);
+      
+      // 同步预览区域滚动
+      const previewScrollTop = scrollRatio * (taskListRef.value.scrollHeight - taskListRef.value.clientHeight);
+      taskListRef.value.scrollTop = previewScrollTop;
+      
+      // 重置滚动标志
+      setTimeout(() => {
+        isScrollingEditor.value = false;
+      }, 100);
+    }
+    
+    // 预览区域滚动处理函数
+    const onPreviewScroll = () => {
+      if (!taskListRef.value || isScrollingEditor.value) return;
+      
+      isScrollingPreview.value = true;
+      
+      // 获取CodeMirror编辑器的滚动DOM元素
+      const editorDOM = document.querySelector('.codemirror-editor .cm-scroller');
+      if (!editorDOM) return;
+      
+      // 计算滚动比例
+      const scrollRatio = taskListRef.value.scrollTop / (taskListRef.value.scrollHeight - taskListRef.value.clientHeight);
+      
+      // 同步编辑器滚动
+      const editorScrollTop = scrollRatio * (editorDOM.scrollHeight - editorDOM.clientHeight);
+      editorDOM.scrollTop = editorScrollTop;
+      
+      // 重置滚动标志
+      setTimeout(() => {
+        isScrollingPreview.value = false;
+      }, 100);
     }
     
     const onTaskStatusChange = (changedTask) => {
@@ -389,6 +437,20 @@ export default {
       fileManager.createFile('默认待办组.md', sampleContent)
       markdownContent.value = sampleContent
       onContentChange()
+      
+      // 添加预览区域滚动事件监听
+      setTimeout(() => {
+        if (taskListRef.value) {
+          taskListRef.value.addEventListener('scroll', onPreviewScroll)
+        }
+      }, 0)
+    })
+    
+    onUnmounted(() => {
+      // 清理预览区域滚动事件监听
+      if (taskListRef.value) {
+        taskListRef.value.removeEventListener('scroll', onPreviewScroll)
+      }
     })
     
     return {
@@ -405,7 +467,10 @@ export default {
       editingField,
       editingValue,
       durationUnit,
+      taskListRef,
       onContentChange,
+      onEditorScroll,
+      onPreviewScroll,
       onTaskStatusChange,
       startEditing,
       saveEditing,
