@@ -133,11 +133,12 @@ export default {
       }
 
       // 执行替换
+      const insertedText = replaceStart === 0 ? insertText : insertText
       view.dispatch({
         changes: {
           from: lineStart + replaceStart,
           to: lineStart + replaceEnd,
-          insert: replaceStart === 0 ? insertText : insertText
+          insert: insertedText
         }
       })
 
@@ -149,6 +150,15 @@ export default {
           selection: {
             anchor: newCursorPos,
             head: newCursorPos + firstPlaceholder.defaultText.length
+          }
+        })
+      } else {
+        // 没有占位符时，将光标放到插入内容的末尾
+        const newCursorPos = lineStart + replaceStart + insertedText.length
+        view.dispatch({
+          selection: {
+            anchor: newCursorPos,
+            head: newCursorPos
           }
         })
       }
