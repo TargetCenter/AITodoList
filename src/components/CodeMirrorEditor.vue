@@ -220,28 +220,8 @@ export default {
 
     // 检查是否应该自动触发补全
     const checkAutoTrigger = (update) => {
-      if (!update.docChanged) return
-
-      const cursor = update.state.selection.main.head
-      const line = update.state.doc.lineAt(cursor)
-      const lineText = line.text
-      const cursorInLine = cursor - line.from
-
-      // 自动触发条件
-      const shouldTrigger = 
-        lineText.startsWith('- ') ||  // 任务开始
-        lineText.includes('@') ||     // 时间输入
-        lineText.includes('T:') ||    // 用时输入
-        lineText.includes('->')       // 依赖输入
-
-      if (shouldTrigger && !autoCompleteVisible.value) {
-        // 延迟触发，避免频繁弹出
-        setTimeout(() => {
-          if (view && view.state.selection.main.head === cursor) {
-            showAutoComplete(lineText, cursorInLine, line.from)
-          }
-        }, 300)
-      }
+      // 禁用自动触发，只允许手动触发
+      return
     }
 
     const createEditor = () => {
