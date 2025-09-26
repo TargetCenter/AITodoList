@@ -58,67 +58,165 @@
             
             <el-col :span="12">
               <div class="preview-container">
-                <h3>任务预览</h3>
+                <div class="preview-header">
+                  <h3>任务预览</h3>
+                  <div class="task-controls">
+                    <el-switch
+                      v-model="showCompleted"
+                      active-text="显示已完成"
+                      inactive-text="隐藏已完成"
+                      size="small"
+                    />
+                    <el-switch
+                      v-model="separateCompleted"
+                      active-text="分类显示"
+                      inactive-text="混合显示"
+                      size="small"
+                      style="margin-left: 10px;"
+                    />
+                  </div>
+                </div>
+                
                 <div class="task-list" ref="taskListRef">
-                  <el-card v-for="task in tasks" :key="task.id" class="task-card">
-                    <div class="task-header">
-                      <el-checkbox v-model="task.completed" @change="onTaskStatusChange(task)"></el-checkbox>
-                      <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
+                  <!-- 移动端滑动提示 -->
+                  <div class="mobile-swipe-hint" v-if="incompleteTasks.length > 0">
+                    <i class="el-icon-info"></i>
+                    提示：左右滑动任务卡片可快速完成任务
+                  </div>
+                  
+                  <!-- 未完成任务 -->
+                  <div v-if="!separateCompleted || incompleteTasks.length > 0">
+                    <h4 v-if="separateCompleted" class="task-section-title">
+                      <i class="el-icon-time"></i>
+                      待办任务 ({{ incompleteTasks.length }})
+                    </h4>
+                    <div
+                      v-for="task in separateCompleted ? incompleteTasks : filteredTasks"
+                      :key="task.id"
+                      class="task-card-wrapper"
+                      :class="{ 'completed-task': task.completed }"
+                    >
+                      <el-card 
+                        class="task-card"
+                        :class="{ 'slide-out': task.id === slidingTaskId }"
+                        @touchstart.passive="onTouchStart($event, task)"
+                        @touchmove.passive="onTouchMove($event, task)"
+                        @touchend.passive="onTouchEnd($event, task)"
+                        @click="onTaskClick(task)"
+                      >
+                        <div class="task-content">
+                          <div class="task-header">
+                            <el-checkbox 
+                              v-model="task.completed" 
+                              @change="onTaskStatusChange(task)"
+                              @click.stop
+                            ></el-checkbox>
+                            <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
+                          </div>
+                          <div class="task-details">
+                            <div v-if="task.startTime !== null">
+                              <i class="el-icon-time"></i>
+                              开始时间: 
+                              <span v-if="editingTaskId !== task.id || editingField !== 'startTime'" @click.stop="startEditing(task, 'startTime')">
+                                {{ task.startTime || '未设置' }}
+                              </span>
+                              <span v-else>
+                                <el-date-picker
+                                  v-model="editingValue"
+                                  type="date"
+                                  placeholder="选择日期"
+                                  size="small"
+                                  style="width: 120px;"
+                                  @change="saveEditing(task)"
+                                  @blur="saveEditing(task)"
+                                  @keyup.esc="cancelEditing"
+                                  ref="editInput"
+                                ></el-date-picker>
+                              </span>
+                            </div>
+                            <div v-if="task.duration !== null">
+                              <i class="el-icon-timer"></i>
+                              用时: 
+                              <span v-if="editingTaskId !== task.id || editingField !== 'duration'" @click.stop="startEditing(task, 'duration')">
+                                {{ task.duration || '未设置' }}
+                              </span>
+                              <span v-else>
+                                <el-input 
+                                  v-model="editingValue" 
+                                  size="small" 
+                                  style="width: 100px;"
+                                  placeholder="例如: 2h, 1.5d"
+                                  @keyup.enter="saveEditing(task)"
+                                  @blur="saveEditing(task)"
+                                  @keyup.esc="cancelEditing"
+                                  ref="editInput"
+                                >
+                                  <template #append>
+                                    <el-select v-model="durationUnit" style="width: 70px;">
+                                      <el-option label="小时" value="h"></el-option>
+                                      <el-option label="天" value="d"></el-option>
+                                      <el-option label="月" value="m"></el-option>
+                                    </el-select>
+                                  </template>
+                                </el-input>
+                              </span>
+                            </div>
+                            <div v-if="task.dependencies.length > 0">
+                              <i class="el-icon-link"></i>
+                              依赖任务: {{ task.dependencies.join(', ') }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="swipe-action-left">
+                          <i class="el-icon-check"></i>
+                          完成
+                        </div>
+                        <div class="swipe-action-right">
+                          <i class="el-icon-check"></i>
+                          完成
+                        </div>
+                      </el-card>
                     </div>
-                    <div class="task-details">
-                      <div v-if="task.startTime !== null">
-                        <i class="el-icon-time"></i>
-                        开始时间: 
-                        <span v-if="editingTaskId !== task.id || editingField !== 'startTime'" @click="startEditing(task, 'startTime')">
-                          {{ task.startTime || '未设置' }}
-                        </span>
-                        <span v-else>
-                          <el-date-picker
-                            v-model="editingValue"
-                            type="date"
-                            placeholder="选择日期"
-                            size="small"
-                            style="width: 120px;"
-                            @change="saveEditing(task)"
-                            @blur="saveEditing(task)"
-                            @keyup.esc="cancelEditing"
-                            ref="editInput"
-                          ></el-date-picker>
-                        </span>
-                      </div>
-                      <div v-if="task.duration !== null">
-                        <i class="el-icon-timer"></i>
-                        用时: 
-                        <span v-if="editingTaskId !== task.id || editingField !== 'duration'" @click="startEditing(task, 'duration')">
-                          {{ task.duration || '未设置' }}
-                        </span>
-                        <span v-else>
-                          <el-input 
-                            v-model="editingValue" 
-                            size="small" 
-                            style="width: 100px;"
-                            placeholder="例如: 2h, 1.5d"
-                            @keyup.enter="saveEditing(task)"
-                            @blur="saveEditing(task)"
-                            @keyup.esc="cancelEditing"
-                            ref="editInput"
-                          >
-                            <template #append>
-                              <el-select v-model="durationUnit" style="width: 70px;">
-                                <el-option label="小时" value="h"></el-option>
-                                <el-option label="天" value="d"></el-option>
-                                <el-option label="月" value="m"></el-option>
-                              </el-select>
-                            </template>
-                          </el-input>
-                        </span>
-                      </div>
-                      <div v-if="task.dependencies.length > 0">
-                        <i class="el-icon-link"></i>
-                        依赖任务: {{ task.dependencies.join(', ') }}
-                      </div>
+                  </div>
+
+                  <!-- 已完成任务 -->
+                  <div v-if="separateCompleted && showCompleted && completedTasks.length > 0">
+                    <h4 class="task-section-title completed-section">
+                      <i class="el-icon-check"></i>
+                      已完成任务 ({{ completedTasks.length }})
+                    </h4>
+                    <div
+                      v-for="task in completedTasks"
+                      :key="task.id"
+                      class="task-card-wrapper completed-task"
+                    >
+                      <el-card class="task-card">
+                        <div class="task-content">
+                          <div class="task-header">
+                            <el-checkbox 
+                              v-model="task.completed" 
+                              @change="onTaskStatusChange(task)"
+                            ></el-checkbox>
+                            <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
+                          </div>
+                          <div class="task-details">
+                            <div v-if="task.startTime !== null">
+                              <i class="el-icon-time"></i>
+                              开始时间: {{ task.startTime || '未设置' }}
+                            </div>
+                            <div v-if="task.duration !== null">
+                              <i class="el-icon-timer"></i>
+                              用时: {{ task.duration || '未设置' }}
+                            </div>
+                            <div v-if="task.dependencies.length > 0">
+                              <i class="el-icon-link"></i>
+                              依赖任务: {{ task.dependencies.join(', ') }}
+                            </div>
+                          </div>
+                        </div>
+                      </el-card>
                     </div>
-                  </el-card>
+                  </div>
                 </div>
               </div>
             </el-col>
@@ -200,9 +298,15 @@ export default {
     const selectedFile = ref('')
     const importData = ref('')
     
-    // 计算属性
-    const currentFile = computed(() => fileManager.getCurrentFile())
-    const fileList = computed(() => fileManager.getFileList())
+    // 任务显示控制
+    const showCompleted = ref(true)
+    const separateCompleted = ref(false)
+    
+    // 滑动相关状态
+    const slidingTaskId = ref(null)
+    const touchStartX = ref(0)
+    const touchStartY = ref(0)
+    const isSwiping = ref(false)
     
     // 编辑状态管理
     const editingTaskId = ref(null)
@@ -214,6 +318,27 @@ export default {
     // 滚动同步相关变量
     const isScrollingEditor = ref(false)
     const isScrollingPreview = ref(false)
+    
+    // 计算属性
+    const currentFile = computed(() => fileManager.getCurrentFile())
+    const fileList = computed(() => fileManager.getFileList())
+    
+    // 任务过滤计算属性
+    const filteredTasks = computed(() => {
+      if (showCompleted.value) {
+        return tasks.value
+      } else {
+        return tasks.value.filter(task => !task.completed)
+      }
+    })
+    
+    const incompleteTasks = computed(() => {
+      return tasks.value.filter(task => !task.completed)
+    })
+    
+    const completedTasks = computed(() => {
+      return tasks.value.filter(task => task.completed)
+    })
     
     const onContentChange = () => {
       // 实时解析Markdown内容
@@ -273,6 +398,14 @@ export default {
     }
     
     const onTaskStatusChange = (changedTask) => {
+      // 添加完成动画效果
+      if (changedTask.completed) {
+        slidingTaskId.value = changedTask.id
+        setTimeout(() => {
+          slidingTaskId.value = null
+        }, 500)
+      }
+      
       // 更新Markdown内容以反映任务状态变化
       try {
         // 将当前的Markdown内容分割成行
@@ -305,6 +438,109 @@ export default {
       } catch (error) {
         console.error('更新任务状态时出错:', error)
       }
+    }
+
+    // 触摸开始事件
+    const onTouchStart = (event, task) => {
+      if (task.completed) return
+      
+      touchStartX.value = event.touches[0].clientX
+      touchStartY.value = event.touches[0].clientY
+      isSwiping.value = false
+    }
+
+    // 触摸移动事件
+    const onTouchMove = (event, task) => {
+      if (task.completed) return
+      
+      const touchX = event.touches[0].clientX
+      const touchY = event.touches[0].clientY
+      const deltaX = touchX - touchStartX.value
+      const deltaY = touchY - touchStartY.value
+      
+      // 判断是否为水平滑动（阈值提高，避免误触）
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+        isSwiping.value = true
+        event.preventDefault()
+        
+        const card = event.currentTarget.querySelector('.task-content')
+        const leftAction = event.currentTarget.querySelector('.swipe-action-left')
+        const rightAction = event.currentTarget.querySelector('.swipe-action-right')
+        
+        if (card) {
+          // 左滑或右滑都显示完成操作
+          const progress = Math.min(Math.abs(deltaX) / 100, 1)
+          card.style.transform = `translateX(${deltaX}px)`
+          card.style.transition = 'none'
+          
+          if (deltaX > 0 && rightAction) {
+            // 右滑
+            rightAction.style.opacity = progress
+            if (leftAction) leftAction.style.opacity = 0
+          } else if (deltaX < 0 && leftAction) {
+            // 左滑
+            leftAction.style.opacity = progress
+            if (rightAction) rightAction.style.opacity = 0
+          }
+        }
+      }
+    }
+
+    // 触摸结束事件
+    const onTouchEnd = (event, task) => {
+      if (task.completed) return
+      
+      const card = event.currentTarget.querySelector('.task-content')
+      const leftAction = event.currentTarget.querySelector('.swipe-action-left')
+      const rightAction = event.currentTarget.querySelector('.swipe-action-right')
+      const touchX = event.changedTouches[0].clientX
+      const deltaX = touchX - touchStartX.value
+      
+      if (card) {
+        // 恢复过渡动画
+        card.style.transition = 'transform 0.3s ease, opacity 0.3s ease'
+        
+        // 如果滑动距离足够（左滑或右滑都可以），标记为完成
+        if (Math.abs(deltaX) > 80 && isSwiping.value) {
+          // 完成动画：向滑动方向继续滑出
+          const direction = deltaX > 0 ? '100%' : '-100%'
+          card.style.transform = `translateX(${direction})`
+          card.style.opacity = '0'
+          
+          setTimeout(() => {
+            task.completed = true
+            onTaskStatusChange(task)
+            
+            // 重置样式
+            card.style.transform = ''
+            card.style.opacity = ''
+            card.style.transition = ''
+            if (leftAction) leftAction.style.opacity = ''
+            if (rightAction) rightAction.style.opacity = ''
+          }, 300)
+        } else {
+          // 回弹到原位
+          card.style.transform = ''
+          if (leftAction) leftAction.style.opacity = ''
+          if (rightAction) rightAction.style.opacity = ''
+          
+          setTimeout(() => {
+            card.style.transition = ''
+          }, 300)
+        }
+      }
+      
+      isSwiping.value = false
+    }
+
+    // PC端点击事件
+    const onTaskClick = (task) => {
+      // 如果正在滑动或者是触摸设备，不处理点击
+      if (isSwiping.value || 'ontouchstart' in window) return
+      
+      // 仅在PC端（非触摸设备）点击切换完成状态
+      task.completed = !task.completed
+      onTaskStatusChange(task)
     }
     
     // 开始编辑字段
@@ -609,10 +845,20 @@ export default {
       editingValue,
       durationUnit,
       taskListRef,
+      showCompleted,
+      separateCompleted,
+      slidingTaskId,
+      filteredTasks,
+      incompleteTasks,
+      completedTasks,
       onContentChange,
       onEditorScroll,
       onPreviewScroll,
       onTaskStatusChange,
+      onTouchStart,
+      onTouchMove,
+      onTouchEnd,
+      onTaskClick,
       startEditing,
       saveEditing,
       cancelEditing,
@@ -678,13 +924,111 @@ export default {
   margin-bottom: 15px;
 }
 
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.task-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .task-list {
   overflow-y: auto;
   flex: 1;
 }
 
-.task-card {
+.task-section-title {
+  margin: 20px 0 10px 0;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #606266;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-section-title.completed-section {
+  background: #f0f9ff;
+  color: #67c23a;
+}
+
+.task-card-wrapper {
   margin-bottom: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card-wrapper.completed-task {
+  opacity: 0.8;
+}
+
+.task-card {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.task-card.slide-out {
+  animation: slideOutRight 0.5s ease-in-out;
+}
+
+@keyframes slideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.task-content {
+  position: relative;
+  z-index: 2;
+  background: white;
+  transition: transform 0.2s ease;
+}
+
+.swipe-action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 80px;
+  background: #67c23a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.swipe-action i {
+  font-size: 20px;
+  margin-bottom: 4px;
 }
 
 .task-header {
@@ -696,6 +1040,7 @@ export default {
 .task-header span {
   margin-left: 10px;
   font-weight: bold;
+  transition: all 0.3s ease;
 }
 
 .task-header .completed {
@@ -721,8 +1066,40 @@ export default {
   text-align: right;
 }
 
-/* 移动端自适应样式 */
+/* 移动端触摸优化 */
 @media (max-width: 768px) {
+  .task-card {
+    touch-action: pan-y;
+    position: relative;
+  }
+  
+  .task-card::after {
+    content: "← 滑动完成 →";
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    font-size: 10px;
+    color: #ccc;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  
+  .task-controls {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .preview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .task-section-title {
+    margin: 15px 0 8px 0;
+    font-size: 13px;
+  }
+
   .el-row {
     display: flex;
     flex-direction: column;
