@@ -81,7 +81,7 @@
                   <!-- 移动端滑动提示 -->
                   <div class="mobile-swipe-hint" v-if="incompleteTasks.length > 0">
                     <i class="el-icon-info"></i>
-                    提示：左右滑动任务卡片可快速完成任务
+                    提示：左右滑动任务卡片超过一半距离可完成任务
                   </div>
                   
                   <!-- 未完成任务 -->
@@ -96,86 +96,87 @@
                       class="task-card-wrapper"
                       :class="{ 'completed-task': task.completed }"
                     >
-                      <el-card 
-                        class="task-card"
-                        :class="{ 'slide-out': task.id === slidingTaskId }"
-                        @touchstart.passive="onTouchStart($event, task)"
-                        @touchmove.passive="onTouchMove($event, task)"
-                        @touchend.passive="onTouchEnd($event, task)"
+                      <div 
+                        class="task-card-container"
+                        @touchstart="onTouchStart($event, task)"
+                        @touchmove="onTouchMove($event, task)"
+                        @touchend="onTouchEnd($event, task)"
                         @click="onTaskClick(task)"
                       >
-                        <div class="task-content">
-                          <div class="task-header">
-                            <el-checkbox 
-                              v-model="task.completed" 
-                              @change="onTaskStatusChange(task)"
-                              @click.stop
-                            ></el-checkbox>
-                            <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
-                          </div>
-                          <div class="task-details">
-                            <div v-if="task.startTime !== null">
-                              <i class="el-icon-time"></i>
-                              开始时间: 
-                              <span v-if="editingTaskId !== task.id || editingField !== 'startTime'" @click.stop="startEditing(task, 'startTime')">
-                                {{ task.startTime || '未设置' }}
-                              </span>
-                              <span v-else>
-                                <el-date-picker
-                                  v-model="editingValue"
-                                  type="date"
-                                  placeholder="选择日期"
-                                  size="small"
-                                  style="width: 120px;"
-                                  @change="saveEditing(task)"
-                                  @blur="saveEditing(task)"
-                                  @keyup.esc="cancelEditing"
-                                  ref="editInput"
-                                ></el-date-picker>
-                              </span>
-                            </div>
-                            <div v-if="task.duration !== null">
-                              <i class="el-icon-timer"></i>
-                              用时: 
-                              <span v-if="editingTaskId !== task.id || editingField !== 'duration'" @click.stop="startEditing(task, 'duration')">
-                                {{ task.duration || '未设置' }}
-                              </span>
-                              <span v-else>
-                                <el-input 
-                                  v-model="editingValue" 
-                                  size="small" 
-                                  style="width: 100px;"
-                                  placeholder="例如: 2h, 1.5d"
-                                  @keyup.enter="saveEditing(task)"
-                                  @blur="saveEditing(task)"
-                                  @keyup.esc="cancelEditing"
-                                  ref="editInput"
-                                >
-                                  <template #append>
-                                    <el-select v-model="durationUnit" style="width: 70px;">
-                                      <el-option label="小时" value="h"></el-option>
-                                      <el-option label="天" value="d"></el-option>
-                                      <el-option label="月" value="m"></el-option>
-                                    </el-select>
-                                  </template>
-                                </el-input>
-                              </span>
-                            </div>
-                            <div v-if="task.dependencies.length > 0">
-                              <i class="el-icon-link"></i>
-                              依赖任务: {{ task.dependencies.join(', ') }}
-                            </div>
-                          </div>
-                        </div>
                         <div class="swipe-action-left">
                           <i class="el-icon-check"></i>
-                          完成
+                          <span>完成</span>
                         </div>
                         <div class="swipe-action-right">
                           <i class="el-icon-check"></i>
-                          完成
+                          <span>完成</span>
                         </div>
-                      </el-card>
+                        <el-card class="task-card" :class="{ 'slide-out': task.id === slidingTaskId }">
+                          <div class="task-content">
+                            <div class="task-header">
+                              <el-checkbox 
+                                v-model="task.completed" 
+                                @change="onTaskStatusChange(task)"
+                                @click.stop
+                              ></el-checkbox>
+                              <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
+                            </div>
+                            <div class="task-details">
+                              <div v-if="task.startTime !== null">
+                                <i class="el-icon-time"></i>
+                                开始时间: 
+                                <span v-if="editingTaskId !== task.id || editingField !== 'startTime'" @click.stop="startEditing(task, 'startTime')">
+                                  {{ task.startTime || '未设置' }}
+                                </span>
+                                <span v-else>
+                                  <el-date-picker
+                                    v-model="editingValue"
+                                    type="date"
+                                    placeholder="选择日期"
+                                    size="small"
+                                    style="width: 120px;"
+                                    @change="saveEditing(task)"
+                                    @blur="saveEditing(task)"
+                                    @keyup.esc="cancelEditing"
+                                    ref="editInput"
+                                  ></el-date-picker>
+                                </span>
+                              </div>
+                              <div v-if="task.duration !== null">
+                                <i class="el-icon-timer"></i>
+                                用时: 
+                                <span v-if="editingTaskId !== task.id || editingField !== 'duration'" @click.stop="startEditing(task, 'duration')">
+                                  {{ task.duration || '未设置' }}
+                                </span>
+                                <span v-else>
+                                  <el-input 
+                                    v-model="editingValue" 
+                                    size="small" 
+                                    style="width: 100px;"
+                                    placeholder="例如: 2h, 1.5d"
+                                    @keyup.enter="saveEditing(task)"
+                                    @blur="saveEditing(task)"
+                                    @keyup.esc="cancelEditing"
+                                    ref="editInput"
+                                  >
+                                    <template #append>
+                                      <el-select v-model="durationUnit" style="width: 70px;">
+                                        <el-option label="小时" value="h"></el-option>
+                                        <el-option label="天" value="d"></el-option>
+                                        <el-option label="月" value="m"></el-option>
+                                      </el-select>
+                                    </template>
+                                  </el-input>
+                                </span>
+                              </div>
+                              <div v-if="task.dependencies.length > 0">
+                                <i class="el-icon-link"></i>
+                                依赖任务: {{ task.dependencies.join(', ') }}
+                              </div>
+                            </div>
+                          </div>
+                        </el-card>
+                      </div>
                     </div>
                   </div>
 
@@ -459,28 +460,45 @@ export default {
       const deltaY = touchY - touchStartY.value
       
       // 判断是否为水平滑动（阈值提高，避免误触）
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
         isSwiping.value = true
         event.preventDefault()
         
-        const card = event.currentTarget.querySelector('.task-content')
-        const leftAction = event.currentTarget.querySelector('.swipe-action-left')
-        const rightAction = event.currentTarget.querySelector('.swipe-action-right')
+        const container = event.currentTarget
+        const card = container.querySelector('.task-card')
+        const leftAction = container.querySelector('.swipe-action-left')
+        const rightAction = container.querySelector('.swipe-action-right')
         
         if (card) {
-          // 左滑或右滑都显示完成操作
-          const progress = Math.min(Math.abs(deltaX) / 100, 1)
-          card.style.transform = `translateX(${deltaX}px)`
+          // 获取卡片宽度，计算一半距离
+          const cardWidth = card.offsetWidth
+          const halfWidth = cardWidth / 2
+          
+          // 限制滑动距离，最大为卡片宽度
+          const maxDistance = cardWidth * 0.8
+          const limitedDeltaX = Math.max(-maxDistance, Math.min(maxDistance, deltaX))
+          const progress = Math.min(Math.abs(deltaX) / halfWidth, 1)
+          
+          // 移动卡片
+          card.style.transform = `translateX(${limitedDeltaX}px)`
           card.style.transition = 'none'
           
           if (deltaX > 0 && rightAction) {
             // 右滑
             rightAction.style.opacity = progress
-            if (leftAction) leftAction.style.opacity = 0
+            rightAction.style.transform = 'scale(1)'
+            if (leftAction) {
+              leftAction.style.opacity = 0
+              leftAction.style.transform = 'scale(0.8)'
+            }
           } else if (deltaX < 0 && leftAction) {
             // 左滑
             leftAction.style.opacity = progress
-            if (rightAction) rightAction.style.opacity = 0
+            leftAction.style.transform = 'scale(1)'
+            if (rightAction) {
+              rightAction.style.opacity = 0
+              rightAction.style.transform = 'scale(0.8)'
+            }
           }
         }
       }
@@ -490,43 +508,74 @@ export default {
     const onTouchEnd = (event, task) => {
       if (task.completed) return
       
-      const card = event.currentTarget.querySelector('.task-content')
-      const leftAction = event.currentTarget.querySelector('.swipe-action-left')
-      const rightAction = event.currentTarget.querySelector('.swipe-action-right')
+      const container = event.currentTarget
+      const card = container.querySelector('.task-card')
+      const leftAction = container.querySelector('.swipe-action-left')
+      const rightAction = container.querySelector('.swipe-action-right')
       const touchX = event.changedTouches[0].clientX
       const deltaX = touchX - touchStartX.value
       
       if (card) {
-        // 恢复过渡动画
-        card.style.transition = 'transform 0.3s ease, opacity 0.3s ease'
+        // 获取卡片宽度，计算一半距离
+        const cardWidth = card.offsetWidth
+        const halfWidth = cardWidth / 2
         
-        // 如果滑动距离足够（左滑或右滑都可以），标记为完成
-        if (Math.abs(deltaX) > 80 && isSwiping.value) {
+        // 恢复过渡动画
+        card.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease'
+        if (leftAction) leftAction.style.transition = 'opacity 0.3s ease, transform 0.3s ease'
+        if (rightAction) rightAction.style.transition = 'opacity 0.3s ease, transform 0.3s ease'
+        
+        // 只有当滑动距离超过卡片宽度的一半且确实在滑动时，才标记为完成
+        if (Math.abs(deltaX) > halfWidth && isSwiping.value) {
           // 完成动画：向滑动方向继续滑出
-          const direction = deltaX > 0 ? '100%' : '-100%'
-          card.style.transform = `translateX(${direction})`
+          const direction = deltaX > 0 ? '150%' : '-150%'
+          card.style.transform = `translateX(${direction}) scale(0.8)`
           card.style.opacity = '0'
+          
+          // 添加完成效果
+          container.style.transform = 'scale(0.95)'
+          container.style.transition = 'transform 0.4s ease'
           
           setTimeout(() => {
             task.completed = true
             onTaskStatusChange(task)
             
             // 重置样式
-            card.style.transform = ''
-            card.style.opacity = ''
-            card.style.transition = ''
-            if (leftAction) leftAction.style.opacity = ''
-            if (rightAction) rightAction.style.opacity = ''
-          }, 300)
+            setTimeout(() => {
+              card.style.transform = ''
+              card.style.opacity = ''
+              card.style.transition = ''
+              container.style.transform = ''
+              container.style.transition = ''
+              if (leftAction) {
+                leftAction.style.opacity = ''
+                leftAction.style.transform = ''
+                leftAction.style.transition = ''
+              }
+              if (rightAction) {
+                rightAction.style.opacity = ''
+                rightAction.style.transform = ''
+                rightAction.style.transition = ''
+              }
+            }, 100)
+          }, 400)
         } else {
           // 回弹到原位
-          card.style.transform = ''
-          if (leftAction) leftAction.style.opacity = ''
-          if (rightAction) rightAction.style.opacity = ''
+          card.style.transform = 'translateX(0)'
+          if (leftAction) {
+            leftAction.style.opacity = '0'
+            leftAction.style.transform = 'scale(0.8)'
+          }
+          if (rightAction) {
+            rightAction.style.opacity = '0'
+            rightAction.style.transform = 'scale(0.8)'
+          }
           
           setTimeout(() => {
             card.style.transition = ''
-          }, 300)
+            if (leftAction) leftAction.style.transition = ''
+            if (rightAction) rightAction.style.transition = ''
+          }, 400)
         }
       }
       
@@ -535,8 +584,11 @@ export default {
 
     // PC端点击事件
     const onTaskClick = (task) => {
-      // 如果正在滑动或者是触摸设备，不处理点击
-      if (isSwiping.value || 'ontouchstart' in window) return
+      // 如果正在滑动，不处理点击
+      if (isSwiping.value) return
+      
+      // 在触摸设备上完全禁用点击完成功能
+      if ('ontouchstart' in window) return
       
       // 仅在PC端（非触摸设备）点击切换完成状态
       task.completed = !task.completed
@@ -942,6 +994,18 @@ export default {
   flex: 1;
 }
 
+.mobile-swipe-hint {
+  display: none;
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 15px;
+  font-size: 12px;
+  color: #1890ff;
+  text-align: center;
+}
+
 .task-section-title {
   margin: 20px 0 10px 0;
   padding: 8px 12px;
@@ -970,15 +1034,23 @@ export default {
   opacity: 0.8;
 }
 
+.task-card-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
 .task-card {
   position: relative;
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+  z-index: 3;
+  background: white;
 }
 
 .task-card:hover {
@@ -1005,16 +1077,15 @@ export default {
   position: relative;
   z-index: 2;
   background: white;
-  transition: transform 0.2s ease;
 }
 
-.swipe-action {
+.swipe-action-left,
+.swipe-action-right {
   position: absolute;
   top: 0;
-  right: 0;
   height: 100%;
   width: 80px;
-  background: #67c23a;
+  background: linear-gradient(135deg, #67c23a, #85ce61);
   color: white;
   display: flex;
   flex-direction: column;
@@ -1023,12 +1094,30 @@ export default {
   font-size: 12px;
   z-index: 1;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+  transform: scale(0.8);
 }
 
-.swipe-action i {
+.swipe-action-left {
+  left: 0;
+}
+
+.swipe-action-right {
+  right: 0;
+}
+
+.swipe-action-left i,
+.swipe-action-right i {
   font-size: 20px;
   margin-bottom: 4px;
+}
+
+.swipe-action-left span,
+.swipe-action-right span {
+  font-size: 10px;
+  font-weight: 600;
 }
 
 .task-header {
@@ -1068,17 +1157,20 @@ export default {
 
 /* 移动端触摸优化 */
 @media (max-width: 768px) {
-  .task-card {
+  .mobile-swipe-hint {
+    display: block;
+  }
+  
+  .task-card-container {
     touch-action: pan-y;
-    position: relative;
   }
   
   .task-card::after {
-    content: "← 滑动完成 →";
+    content: "← 滑动超过一半完成 →";
     position: absolute;
     bottom: 5px;
     right: 10px;
-    font-size: 10px;
+    font-size: 9px;
     color: #ccc;
     pointer-events: none;
     opacity: 0.6;
