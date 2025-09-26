@@ -18,6 +18,10 @@
                 <el-dropdown-item command="new">新建文件</el-dropdown-item>
                 <el-dropdown-item command="save">保存文件</el-dropdown-item>
                 <el-dropdown-item command="open">打开文件</el-dropdown-item>
+                <el-dropdown-item command="delete" divided>删除当前文件</el-dropdown-item>
+                <el-dropdown-item command="export">导出数据</el-dropdown-item>
+                <el-dropdown-item command="import">导入数据</el-dropdown-item>
+                <el-dropdown-item command="clear" divided>清空所有数据</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -116,7 +120,6 @@
                     </div>
                   </el-card>
                 </div>
-                
               </div>
             </el-col>
           </el-row>
@@ -152,6 +155,22 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 导入数据对话框 -->
+    <el-dialog v-model="importDialogVisible" title="导入数据" width="50%">
+      <el-input
+        v-model="importData"
+        type="textarea"
+        :rows="10"
+        placeholder="请粘贴导出的JSON数据">
+      </el-input>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="importDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="importDataConfirm">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -176,8 +195,10 @@ export default {
     // 文件管理相关
     const newFileDialogVisible = ref(false)
     const openFileDialogVisible = ref(false)
+    const importDialogVisible = ref(false)
     const newFileName = ref('')
     const selectedFile = ref('')
+    const importData = ref('')
     
     // 计算属性
     const currentFile = computed(() => fileManager.getCurrentFile())
@@ -199,6 +220,11 @@ export default {
       try {
         tasks.value = parseMarkdown(markdownContent.value)
         syntaxErrors.value = validateSyntax(markdownContent.value)
+        
+        // 自动保存到localStorage
+        if (currentFile.value) {
+          fileManager.saveFile(currentFile.value.name, markdownContent.value)
+        }
       } catch (error) {
         console.error('解析错误:', error)
       }
@@ -393,6 +419,18 @@ export default {
         case 'open':
           openFileDialogVisible.value = true
           break
+        case 'delete':
+          deleteCurrentFile()
+          break
+        case 'export':
+          exportData()
+          break
+        case 'import':
+          importDialogVisible.value = true
+          break
+        case 'clear':
+          clearAllData()
+          break
       }
     }
     
@@ -424,19 +462,120 @@ export default {
         openFileDialogVisible.value = false
       }
     }
+
+    // 删除当前文件
+    const deleteCurrentFile = () => {
+      if (!currentFile.value) {
+        alert('没有当前文件可删除')
+        return
+      }
+      
+      if (confirm(`确定要删除文件 "${currentFile.value.name}" 吗？`)) {
+        fileManager.deleteFile(currentFile.value.name)
+        
+        // 删除后尝试打开其他文件
+        const files = fileManager.getFileList()
+        if (files.length > 0) {
+          const firstFile = files[0]
+          fileManager.setCurrentFile(firstFile.name)
+          markdownContent.value = firstFile.content
+          onContentChange()
+        } else {
+          // 如果没有其他文件，清空编辑器
+          markdownContent.value = ''
+          tasks.value = []
+          syntaxErrors.value = []
+        }
+        
+        alert('文件已删除')
+      }
+    }
+
+    // 导出数据
+    const exportData = () => {
+      try {
+        const exportedData = fileManager.exportData()
+        
+        // 创建下载链接
+        const blob = new Blob([exportedData], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `todo-backup-${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        
+        alert('数据导出成功')
+      } catch (error) {
+        console.error('导出数据失败:', error)
+        alert('导出数据失败')
+      }
+    }
+
+    // 导入数据确认
+    const importDataConfirm = () => {
+      if (!importData.value.trim()) {
+        alert('请输入要导入的数据')
+        return
+      }
+      
+      if (confirm('导入数据将覆盖现有所有数据，确定继续吗？')) {
+        const success = fileManager.importData(importData.value)
+        if (success) {
+          // 导入成功后刷新界面
+          const files = fileManager.getFileList()
+          if (files.length > 0) {
+            const firstFile = files[0]
+            fileManager.setCurrentFile(firstFile.name)
+            markdownContent.value = firstFile.content
+            onContentChange()
+          }
+          
+          importDialogVisible.value = false
+          importData.value = ''
+          alert('数据导入成功')
+        } else {
+          alert('数据导入失败，请检查数据格式')
+        }
+      }
+    }
+
+    // 清空所有数据
+    const clearAllData = () => {
+      if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+        fileManager.clearAll()
+        
+        // 重新加载默认文件
+        const currentFileData = fileManager.getCurrentFile()
+        if (currentFileData) {
+          markdownContent.value = currentFileData.content
+          onContentChange()
+        }
+        
+        alert('所有数据已清空')
+      }
+    }
     
     onMounted(() => {
-      // 初始化示例内容
-      const sampleContent = `- [ ] 设计数据库 @2023-09-15 T:2h
-- [ ] 开发API接口 @2023-09-16 T:4h
-- [ ] 前端页面开发 @2023-09-17 T:3h
-- [x] 项目初始化 @2023-09-14 T:1h
-- [ ] 部署测试环境 @2023-09-20 T:2h ->前端页面开发`
-      
-      // 创建一个默认文件
-      fileManager.createFile('默认待办组.md', sampleContent)
-      markdownContent.value = sampleContent
-      onContentChange()
+      // 从localStorage加载数据，如果有当前文件则加载其内容
+      const currentFileData = fileManager.getCurrentFile()
+      if (currentFileData) {
+        markdownContent.value = currentFileData.content
+        onContentChange()
+      } else {
+        // 如果没有当前文件，检查是否有文件列表
+        const files = fileManager.getFileList()
+        if (files.length > 0) {
+          // 加载第一个文件
+          const firstFile = files[0]
+          fileManager.setCurrentFile(firstFile.name)
+          markdownContent.value = firstFile.content
+          onContentChange()
+        }
+        // 如果没有任何文件，fileManager会自动创建默认文件
+      }
       
       // 添加预览区域滚动事件监听
       setTimeout(() => {
@@ -461,8 +600,10 @@ export default {
       fileList,
       newFileDialogVisible,
       openFileDialogVisible,
+      importDialogVisible,
       newFileName,
       selectedFile,
+      importData,
       editingTaskId,
       editingField,
       editingValue,
@@ -480,7 +621,11 @@ export default {
       viewGraph,
       handleFileCommand,
       createNewFile,
-      openSelectedFile
+      openSelectedFile,
+      deleteCurrentFile,
+      exportData,
+      importDataConfirm,
+      clearAllData
     }
   }
 }

@@ -66,6 +66,7 @@ export default {
     const selectNext = () => {
       if (filteredItems.value.length > 0) {
         selectedIndex.value = (selectedIndex.value + 1) % filteredItems.value.length
+        scrollToSelected()
       }
     }
 
@@ -74,7 +75,36 @@ export default {
         selectedIndex.value = selectedIndex.value === 0 
           ? filteredItems.value.length - 1 
           : selectedIndex.value - 1
+        scrollToSelected()
       }
+    }
+
+    const scrollToSelected = () => {
+      // 延迟执行，确保DOM已更新
+      setTimeout(() => {
+        const listElement = document.querySelector('.autocomplete-list')
+        const selectedElement = document.querySelector('.autocomplete-item.active')
+        
+        if (listElement && selectedElement) {
+          const listRect = listElement.getBoundingClientRect()
+          const selectedRect = selectedElement.getBoundingClientRect()
+          
+          // 计算相对于列表容器的位置
+          const selectedTop = selectedElement.offsetTop
+          const selectedBottom = selectedTop + selectedElement.offsetHeight
+          const listScrollTop = listElement.scrollTop
+          const listHeight = listElement.clientHeight
+          
+          // 如果选中项在可视区域上方
+          if (selectedTop < listScrollTop) {
+            listElement.scrollTop = selectedTop
+          }
+          // 如果选中项在可视区域下方
+          else if (selectedBottom > listScrollTop + listHeight) {
+            listElement.scrollTop = selectedBottom - listHeight
+          }
+        }
+      }, 0)
     }
 
     const selectCurrent = () => {
@@ -106,7 +136,8 @@ export default {
       selectNext,
       selectPrevious,
       selectCurrent,
-      close
+      close,
+      scrollToSelected
     }
   }
 }
