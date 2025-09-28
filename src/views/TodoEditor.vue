@@ -270,20 +270,25 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- AI 助手组件 -->
+    <AIAssistant />
   </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { parseMarkdown, validateSyntax } from '../utils/markdownParser'
 import fileManager from '../utils/fileManager'
 import CodeMirrorEditor from '../components/CodeMirrorEditor.vue'
+import AIAssistant from '../components/AIAssistant.vue'
 
 export default {
   name: 'TodoEditor',
   components: {
-    CodeMirrorEditor
+    CodeMirrorEditor,
+    AIAssistant
   },
   setup() {
     const router = useRouter()
@@ -845,6 +850,22 @@ export default {
         alert('所有数据已清空')
       }
     }
+
+    // 更新编辑器内容的方法（供AI助手使用）
+    const updateEditorContent = (content) => {
+      markdownContent.value = content
+      onContentChange()
+      
+      // 保存到当前文件
+      if (currentFile.value) {
+        fileManager.saveFile(currentFile.value.name, content)
+      }
+    }
+
+    // 为AI助手提供依赖注入
+    provide('fileManager', fileManager)
+    provide('editorContent', markdownContent)
+    provide('updateEditorContent', updateEditorContent)
     
     onMounted(() => {
       // 从localStorage加载数据，如果有当前文件则加载其内容
@@ -923,7 +944,8 @@ export default {
       deleteCurrentFile,
       exportData,
       importDataConfirm,
-      clearAllData
+      clearAllData,
+      updateEditorContent
     }
   }
 }
