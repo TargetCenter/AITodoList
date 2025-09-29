@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import TodoEditor from '../views/TodoEditor.vue'
 import TodoGraph from '../views/TodoGraph.vue'
+import APITest from '../components/APITest.vue'
 
 const routes = [
   {
@@ -12,6 +13,11 @@ const routes = [
     path: '/graph',
     name: 'TodoGraph',
     component: TodoGraph
+  },
+  {
+    path: '/test',
+    name: 'APITest',
+    component: APITest
   }
 ]
 

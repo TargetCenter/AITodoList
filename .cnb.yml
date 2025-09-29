@@ -1,0 +1,23 @@
+# .cnb.yml
+$:
+  vscode:
+    - docker:
+        # build: .ide/Dockerfile
+        # 指定开发环境镜像，可以是任意可访问的镜像。
+        # 如果 image 指定的镜像中已安装 code-server 代码服务，将使用单容器模式启动开发环境
+        # 如下镜像为 CNB 默认开发环境镜像，已安装代码服务，将使用单容器模式启动开发环境
+        # 可按需替换为其他镜像
+        # image: cnbcool/default-dev-env:latest
+        image: docker.cnb.cool/zhenxijs/seo/bolg/nuxt_dev_env:latest
+      services:
+        - vscode
+        - docker
+      env:
+        # 配置环境变量，指定首次打开终端时自动执行的命令
+        # CNB_WELCOME_CMD: zsh ./.install_claude.sh
+      # 开发环境启动后安装依赖
+      runner:
+        cpus: 16
+      stages:
+        - name: 安装node环境
+          script: npm install
