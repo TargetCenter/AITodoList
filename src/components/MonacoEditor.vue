@@ -53,6 +53,19 @@ export default {
     options: {
       type: Object,
       default: () => ({})
+    },
+    // 新增功能控制props
+    enableAutoComplete: {
+      type: Boolean,
+      default: false
+    },
+    enableHoverInfo: {
+      type: Boolean,
+      default: false
+    },
+    enableSyntaxValidation: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update:modelValue', 'scroll', 'change', 'focus', 'blur'],
@@ -215,6 +228,19 @@ export default {
       // 注册自定义语言
       registerTodoLanguage()
 
+      // 根据props动态注册功能
+      if (props.enableAutoComplete) {
+        monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
+      }
+
+      if (props.enableHoverInfo) {
+        monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
+      }
+
+      if (props.enableSyntaxValidation) {
+        todoValidationProvider.register()
+      }
+
       // 合并选项
       const editorOptions = {
         ...defaultOptions,
@@ -346,6 +372,25 @@ export default {
         editor.updateOptions(newOptions)
       }
     }, { deep: true })
+
+    // 监听功能启用props的变化
+    watch(() => props.enableAutoComplete, (enabled) => {
+      if (enabled && model) {
+        monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
+      }
+    })
+
+    watch(() => props.enableHoverInfo, (enabled) => {
+      if (enabled && model) {
+        monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
+      }
+    })
+
+    watch(() => props.enableSyntaxValidation, (enabled) => {
+      if (enabled && model) {
+        todoValidationProvider.register()
+      }
+    })
 
     onMounted(async () => {
       await createEditor()

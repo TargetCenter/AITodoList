@@ -41,6 +41,132 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          
+          <el-dropdown @command="handleConfigCommand">
+            <el-button>
+              配置<i class="el-icon-arrow-down el-icon--right"></i>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="toggleAutoComplete">
+                  <el-checkbox 
+                    v-model="editorConfig.autoComplete" 
+                    @change="updateEditorConfig"
+                    @click.stop
+                  >
+                    自动补全
+                  </el-checkbox>
+                </el-dropdown-item>
+                
+                <!-- 自动补全子项开关 -->
+                <div v-if="editorConfig.autoComplete">
+                  <el-dropdown-item command="toggleTaskTemplates">
+                    <el-checkbox 
+                      v-model="editorConfig.taskTemplates" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      任务模板
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleDateSuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.dateSuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      日期建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleTimeSuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.timeSuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      时间建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleDurationSuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.durationSuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      用时建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="togglePrioritySuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.prioritySuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      优先级建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleTagSuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.tagSuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      标签建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleDependencySuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.dependencySuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      依赖任务建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleStatusSuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.statusSuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      状态建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggleKeywordSuggestions">
+                    <el-checkbox 
+                      v-model="editorConfig.keywordSuggestions" 
+                      @change="updateEditorConfig"
+                      @click.stop
+                    >
+                      关键字建议
+                    </el-checkbox>
+                  </el-dropdown-item>
+                </div>
+                
+                <el-dropdown-item command="toggleHoverInfo">
+                  <el-checkbox 
+                    v-model="editorConfig.hoverInfo" 
+                    @change="updateEditorConfig"
+                    @click.stop
+                  >
+                    悬停信息
+                  </el-checkbox>
+                </el-dropdown-item>
+                <el-dropdown-item command="toggleSyntaxValidation">
+                  <el-checkbox 
+                    v-model="editorConfig.syntaxValidation" 
+                    @change="updateEditorConfig"
+                    @click.stop
+                  >
+                    语法校验
+                  </el-checkbox>
+                </el-dropdown-item>
+                <el-dropdown-item command="resetConfig" divided>
+                  恢复默认配置
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-header>
       
@@ -54,6 +180,9 @@
                   v-model="markdownContent"
                   language="todo-markdown"
                   :theme="currentTheme"
+                  :enable-auto-complete="editorConfig.autoComplete"
+                  :enable-hover-info="editorConfig.hoverInfo"
+                  :enable-syntax-validation="editorConfig.syntaxValidation"
                   @update:modelValue="onContentChange"
                   @scroll="onEditorScroll"
                   :options="editorOptions"
@@ -300,6 +429,7 @@ import { parseMarkdown, validateSyntax } from '../utils/markdownParser'
 import fileManager from '../utils/fileManager'
 import MonacoEditor from '../components/MonacoEditor.vue'
 import AIAssistant from '../components/AIAssistant.vue'
+import { getEditorConfig, updateEditorConfig, resetEditorConfig } from '../utils/editorConfig'
 
 export default {
   name: 'TodoEditor',
@@ -337,6 +467,9 @@ export default {
     const newFileName = ref('')
     const selectedFile = ref('')
     const importData = ref('')
+    
+    // 编辑器配置
+    const editorConfig = ref(getEditorConfig())
     
     // 任务显示控制
     const showCompleted = ref(true)
@@ -730,6 +863,21 @@ export default {
       }
     }
     
+    // 更新编辑器配置
+    const updateEditorConfig = () => {
+      updateEditorConfig(editorConfig.value)
+    }
+    
+    // 处理配置命令
+    const handleConfigCommand = (command) => {
+      switch (command) {
+        case 'resetConfig':
+          resetEditorConfig()
+          editorConfig.value = getEditorConfig()
+          break
+      }
+    }
+    
     const viewGraph = () => {
       router.push('/graph')
     }
@@ -1022,6 +1170,7 @@ export default {
       completedTasks,
       editorOptions,
       currentTheme,
+      editorConfig,
       onContentChange,
       onEditorScroll,
       onPreviewScroll,
@@ -1038,6 +1187,8 @@ export default {
       viewGraph,
       handleFileCommand,
       handleThemeCommand,
+      handleConfigCommand,
+      updateEditorConfig,
       loadDemoContent,
       createNewFile,
       openSelectedFile,

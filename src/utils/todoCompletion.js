@@ -410,60 +410,82 @@ export const todoCompletionProvider = {
     const currentLine = model.getLineContent(position.lineNumber)
     const lineUntilCursor = currentLine.substring(0, position.column - 1)
     
+    // 获取配置
+    let config = {}
+    try {
+      const storedConfig = localStorage.getItem('todo-editor-config')
+      if (storedConfig) {
+        config = JSON.parse(storedConfig)
+      }
+    } catch (error) {
+      console.warn('Failed to parse editor config:', error)
+    }
+    
     let suggestions = []
 
     // 任务模板建议（行首）
-    if (lineUntilCursor.trim() === '' || lineUntilCursor.match(/^\s*$/)) {
+    if ((config.autoComplete && config.taskTemplates !== false) && 
+        (lineUntilCursor.trim() === '' || lineUntilCursor.match(/^\s*$/))) {
       suggestions.push(...getTaskTemplateSuggestions())
     }
 
     // 时间相关建议
-    if (lineUntilCursor.includes('@') || lineUntilCursor.endsWith('@')) {
+    if (config.autoComplete && config.dateSuggestions !== false && 
+        (lineUntilCursor.includes('@') || lineUntilCursor.endsWith('@'))) {
       suggestions.push(...getDateSuggestions())
-      suggestions.push(...getTimeSuggestions())
+      if (config.timeSuggestions !== false) {
+        suggestions.push(...getTimeSuggestions())
+      }
     }
 
     // 用时建议
-    if (lineUntilCursor.includes('T:') || lineUntilCursor.endsWith('T:')) {
+    if (config.autoComplete && config.durationSuggestions !== false && 
+        (lineUntilCursor.includes('T:') || lineUntilCursor.endsWith('T:'))) {
       suggestions.push(...getDurationSuggestions())
     }
 
     // 优先级建议
-    if (lineUntilCursor.includes('!') || lineUntilCursor.endsWith('!')) {
+    if (config.autoComplete && config.prioritySuggestions !== false && 
+        (lineUntilCursor.includes('!') || lineUntilCursor.endsWith('!'))) {
       suggestions.push(...getPrioritySuggestions())
     }
 
     // 标签建议
-    if (lineUntilCursor.includes('#') || lineUntilCursor.endsWith('#')) {
+    if (config.autoComplete && config.tagSuggestions !== false && 
+        (lineUntilCursor.includes('#') || lineUntilCursor.endsWith('#'))) {
       suggestions.push(...getTagSuggestions())
     }
 
     // 依赖任务建议
-    if (lineUntilCursor.includes('->') || lineUntilCursor.endsWith('->')) {
+    if (config.autoComplete && config.dependencySuggestions !== false && 
+        (lineUntilCursor.includes('->') || lineUntilCursor.endsWith('->'))) {
       const tasks = getCurrentTasks(model)
       suggestions.push(...getDependencySuggestions(tasks))
     }
 
     // 状态建议
-    if (lineUntilCursor.match(/\b(status|状态)[:：]\s*$/i)) {
+    if (config.autoComplete && config.statusSuggestions !== false && 
+        lineUntilCursor.match(/\b(status|状态)[:：]\s*$/i)) {
       suggestions.push(...getStatusSuggestions())
     }
 
     // 通用关键字建议
-    const keywords = [
-      'TODO', 'FIXME', 'NOTE', 'HACK', 'XXX', 'BUG', 'DONE',
-      '待办', '已完成', '进行中', '暂停', '取消', '重要', '紧急'
-    ]
+    if (config.autoComplete && config.keywordSuggestions !== false) {
+      const keywords = [
+        'TODO', 'FIXME', 'NOTE', 'HACK', 'XXX', 'BUG', 'DONE',
+        '待办', '已完成', '进行中', '暂停', '取消', '重要', '紧急'
+      ]
 
-    keywords.forEach(keyword => {
-      suggestions.push({
-        label: keyword,
-        kind: CompletionItemKind.Keyword,
-        insertText: keyword,
-        detail: '关键字',
-        documentation: `关键字：${keyword}`
+      keywords.forEach(keyword => {
+        suggestions.push({
+          label: keyword,
+          kind: CompletionItemKind.Keyword,
+          insertText: keyword,
+          detail: '关键字',
+          documentation: `关键字：${keyword}`
+        })
       })
-    })
+    }
 
     return {
       suggestions: suggestions
