@@ -12,7 +12,12 @@
       "Bash(findstr:*)",
       "Bash(sed:*)",
       "Bash(cat:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(git push:*)",
+      "Bash(curl:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
