@@ -18,12 +18,19 @@ if (typeof window !== 'undefined' && !window.MonacoEnvironment) {
     getWorkerUrl: function (moduleId, label) {
       // 使用简单的Worker配置，避免复杂的路径问题
       // 在生产环境中，建议使用monaco-editor-webpack-plugin或vite-plugin-monaco-editor
-      return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
-        self.MonacoEnvironment = {
-          baseUrl: 'https://unpkg.com/monaco-editor@0.45.0/min/'
-        };
-        importScripts('https://unpkg.com/monaco-editor@0.45.0/min/vs/base/worker/workerMain.js');
-      `)}`;
+      if (label === 'json') {
+        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/json/json.worker.js';
+      }
+      if (label === 'css' || label === 'scss' || label === 'less') {
+        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/css/css.worker.js';
+      }
+      if (label === 'html' || label === 'handlebars' || label === 'razor') {
+        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/html/html.worker.js';
+      }
+      if (label === 'typescript' || label === 'javascript') {
+        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/typescript/ts.worker.js';
+      }
+      return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/editor/editor.worker.js';
     }
   }
 }
@@ -191,14 +198,14 @@ export default {
       monaco.editor.defineTheme('todo-light', todoTheme)
       monaco.editor.defineTheme('todo-dark', todoDarkTheme)
 
-      // 注册补全提供者
-      monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
+      // // 注册补全提供者
+      // monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
 
-      // 注册悬停提供者
-      monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
+      // // 注册悬停提供者
+      // monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
 
-      // 注册语法校验
-      todoValidationProvider.register()
+      // // 注册语法校验
+      // todoValidationProvider.register()
     }
 
     // 创建编辑器
