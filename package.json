@@ -22,6 +22,7 @@
     "@uiw/codemirror-theme-github": "^4.25.1",
     "echarts": "^6.0.0",
     "element-plus": "^2.11.2",
+    "monaco-editor": "^0.53.0",
     "vue": "^3.5.21",
     "vue-router": "^4.5.1"
   },

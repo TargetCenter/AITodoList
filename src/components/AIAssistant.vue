@@ -3,7 +3,7 @@
     <!-- AI助手触发按钮 -->
     <el-button 
       type="primary" 
-      :icon="Wand2" 
+      :icon="MagicStick" 
       circle 
       class="ai-trigger-btn"
       @click="showDialog = true"
@@ -193,13 +193,13 @@
 <script>
 import { ref, computed, inject } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Wand2 } from '@element-plus/icons-vue'
+import { MagicStick } from '@element-plus/icons-vue'
 import pollinationsAPI from '../utils/pollinationsAPI.js'
 
 export default {
   name: 'AIAssistant',
   components: {
-    Wand2
+    MagicStick
   },
   setup() {
     // 注入文件管理器和编辑器内容
@@ -393,7 +393,7 @@ export default {
       clearResults,
       
       // 图标
-      Wand2
+      MagicStick
     }
   }
 }

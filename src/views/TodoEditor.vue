@@ -21,12 +21,26 @@
                 <el-dropdown-item command="delete" divided>删除当前文件</el-dropdown-item>
                 <el-dropdown-item command="export">导出数据</el-dropdown-item>
                 <el-dropdown-item command="import">导入数据</el-dropdown-item>
-                <el-dropdown-item command="clear" divided>清空所有数据</el-dropdown-item>
+                <el-dropdown-item command="demo" divided>加载演示内容</el-dropdown-item>
+                <el-dropdown-item command="clear">清空所有数据</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
           <el-button type="primary" @click="checkSyntax">语法检查</el-button>
           <el-button type="info" @click="viewGraph">查看关系图</el-button>
+          <el-dropdown @command="handleThemeCommand">
+            <el-button>
+              主题<i class="el-icon-arrow-down el-icon--right"></i>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="vs">浅色主题</el-dropdown-item>
+                <el-dropdown-item command="vs-dark">深色主题</el-dropdown-item>
+                <el-dropdown-item command="todo-light">Todo浅色</el-dropdown-item>
+                <el-dropdown-item command="todo-dark">Todo深色</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-header>
       
@@ -36,10 +50,13 @@
             <el-col :span="12">
               <div class="editor-container">
                 <h3>Markdown 编辑器</h3>
-                <code-mirror-editor
+                <monaco-editor
                   v-model="markdownContent"
+                  language="todo-markdown"
+                  :theme="currentTheme"
                   @update:modelValue="onContentChange"
                   @scroll="onEditorScroll"
+                  :options="editorOptions"
                   style="height: 500px;"
                 />
                 <div v-if="syntaxErrors.length > 0" class="errors">
@@ -281,13 +298,13 @@ import { ref, onMounted, onUnmounted, computed, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { parseMarkdown, validateSyntax } from '../utils/markdownParser'
 import fileManager from '../utils/fileManager'
-import CodeMirrorEditor from '../components/CodeMirrorEditor.vue'
+import MonacoEditor from '../components/MonacoEditor.vue'
 import AIAssistant from '../components/AIAssistant.vue'
 
 export default {
   name: 'TodoEditor',
   components: {
-    CodeMirrorEditor,
+    MonacoEditor,
     AIAssistant
   },
   setup() {
@@ -295,6 +312,23 @@ export default {
     const markdownContent = ref('')
     const tasks = ref([])
     const syntaxErrors = ref([])
+    
+    // 当前主题
+    const currentTheme = ref('vs')
+    
+    // Monaco编辑器选项
+    const editorOptions = ref({
+      fontSize: 14,
+      fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+      lineNumbers: 'on',
+      minimap: { enabled: true },
+      wordWrap: 'on',
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
+      renderWhitespace: 'selection',
+      cursorBlinking: 'blink',
+      smoothScrolling: true
+    })
     
     // 文件管理相关
     const newFileDialogVisible = ref(false)
@@ -721,9 +755,71 @@ export default {
         case 'import':
           importDialogVisible.value = true
           break
+        case 'demo':
+          loadDemoContent()
+          break
         case 'clear':
           clearAllData()
           break
+      }
+    }
+    
+    // 主题切换处理
+    const handleThemeCommand = (theme) => {
+      currentTheme.value = theme
+    }
+    
+    // 加载演示内容
+    const loadDemoContent = () => {
+      const demoContent = `# Monaco Editor Todo Markdown 演示
+
+欢迎使用基于Monaco Editor的Todo Markdown编辑器！
+
+## 🎯 基本任务语法
+- [ ] 学习Vue 3新特性 @today T:2h !high #学习
+- [x] 搭建项目框架 @2024-01-15 T:1d !high #项目
+- [ ] 完成项目文档 @tomorrow T:1h !medium #文档
+
+## ⏰ 时间标记测试
+- [ ] 今天的会议 @today
+- [ ] 明天的任务 @tomorrow
+- [ ] 具体日期任务 @2024-02-01
+- [ ] 带时间的任务 @09:00
+
+## ⏱️ 用时估算测试
+- [ ] 快速修复 T:15min
+- [ ] 功能开发 T:2h
+- [ ] 长期项目 T:1w
+
+## 🚨 优先级测试
+- [ ] 紧急修复 !urgent #工作
+- [ ] 重要功能 !high #项目
+- [ ] 常规任务 !medium #日常
+- [ ] 可选优化 !low #优化
+
+## 🔗 依赖关系测试
+- [ ] 数据库设计 @2024-02-01 T:1d !high #项目
+- [ ] API开发 @2024-02-03 T:2d !high #项目 -> 数据库设计
+- [ ] 前端开发 @2024-02-06 T:3d !medium #项目 -> API开发
+
+## 💡 使用技巧
+1. 按 Ctrl+Space 触发智能补全
+2. 鼠标悬停查看详细信息
+3. 语法错误会有波浪线标记
+4. 支持多种主题切换
+
+试试不同的主题和功能吧！`
+      
+      if (confirm('加载演示内容将覆盖当前编辑器内容，确定继续吗？')) {
+        markdownContent.value = demoContent
+        onContentChange()
+        
+        // 如果有当前文件，保存演示内容
+        if (currentFile.value) {
+          fileManager.saveFile(currentFile.value.name, demoContent)
+        }
+        
+        alert('演示内容已加载！您可以体验Monaco Editor的所有功能。')
       }
     }
     
@@ -924,6 +1020,8 @@ export default {
       filteredTasks,
       incompleteTasks,
       completedTasks,
+      editorOptions,
+      currentTheme,
       onContentChange,
       onEditorScroll,
       onPreviewScroll,
@@ -939,6 +1037,8 @@ export default {
       saveFile,
       viewGraph,
       handleFileCommand,
+      handleThemeCommand,
+      loadDemoContent,
       createNewFile,
       openSelectedFile,
       deleteCurrentFile,
