@@ -12,6 +12,22 @@ import { todoCompletionProvider } from '../utils/todoCompletion'
 import { todoHoverProvider } from '../utils/todoHover'
 import { todoValidationProvider } from '../utils/todoValidation'
 
+// 配置Monaco Editor的Web Worker
+if (typeof window !== 'undefined' && !window.MonacoEnvironment) {
+  window.MonacoEnvironment = {
+    getWorkerUrl: function (moduleId, label) {
+      // 使用简单的Worker配置，避免复杂的路径问题
+      // 在生产环境中，建议使用monaco-editor-webpack-plugin或vite-plugin-monaco-editor
+      return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+        self.MonacoEnvironment = {
+          baseUrl: 'https://unpkg.com/monaco-editor@0.45.0/min/'
+        };
+        importScripts('https://unpkg.com/monaco-editor@0.45.0/min/vs/base/worker/workerMain.js');
+      `)}`;
+    }
+  }
+}
+
 export default {
   name: 'MonacoEditor',
   props: {
