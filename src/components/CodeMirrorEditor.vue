@@ -19,8 +19,8 @@ import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { markdown } from '@codemirror/lang-markdown'
 import AutoComplete from './AutoComplete.vue'
-import { getAutoCompleteSuggestions, processTemplate } from '../utils/autoCompleteData'
-import { parseMarkdown } from '../utils/markdownParser'
+import { getAutoCompleteSuggestions, processTemplate } from '@/utils/autoCompleteData'
+import { parseMarkdown } from '@/utils/markdownParser'
 
 export default {
   name: 'CodeMirrorEditor',
@@ -229,9 +229,8 @@ export default {
     }
 
     // 检查是否应该自动触发补全
-    const checkAutoTrigger = (update) => {
+    const checkAutoTrigger = () => {
       // 禁用自动触发，只允许手动触发
-      return
     }
 
     const createEditor = () => {
@@ -436,23 +435,5 @@ export default {
   border-radius: 4px;
   overflow: hidden;
   height: 100%;
-}
-
-.codemirror-editor :deep(.cm-editor) {
-  height: 100%;
-}
-
-.codemirror-editor :deep(.cm-scroller) {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 14px;
-}
-
-.codemirror-editor :deep(.cm-focused) {
-  outline: none;
-}
-
-/* 自动补全相关样式 */
-.codemirror-editor :deep(.cm-tooltip-autocomplete) {
-  display: none !important;
 }
 </style>
