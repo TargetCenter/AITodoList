@@ -42,132 +42,7 @@
             </template>
           </el-dropdown>
           
-          <el-dropdown @command="handleConfigCommand">
-            <el-button>
-              配置<i class="el-icon-arrow-down el-icon--right"></i>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="toggleAutoComplete">
-                  <el-checkbox 
-                    v-model="editorConfig.autoComplete" 
-                    @change="updateEditorConfig"
-                    @click.stop
-                  >
-                    自动补全
-                  </el-checkbox>
-                </el-dropdown-item>
-                
-                <!-- 自动补全子项开关 -->
-                <div v-if="editorConfig.autoComplete">
-                  <el-dropdown-item command="toggleTaskTemplates">
-                    <el-checkbox 
-                      v-model="editorConfig.taskTemplates" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      任务模板
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleDateSuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.dateSuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      日期建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleTimeSuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.timeSuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      时间建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleDurationSuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.durationSuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      用时建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="togglePrioritySuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.prioritySuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      优先级建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleTagSuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.tagSuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      标签建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleDependencySuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.dependencySuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      依赖任务建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleStatusSuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.statusSuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      状态建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="toggleKeywordSuggestions">
-                    <el-checkbox 
-                      v-model="editorConfig.keywordSuggestions" 
-                      @change="updateEditorConfig"
-                      @click.stop
-                    >
-                      关键字建议
-                    </el-checkbox>
-                  </el-dropdown-item>
-                </div>
-                
-                <el-dropdown-item command="toggleHoverInfo">
-                  <el-checkbox 
-                    v-model="editorConfig.hoverInfo" 
-                    @change="updateEditorConfig"
-                    @click.stop
-                  >
-                    悬停信息
-                  </el-checkbox>
-                </el-dropdown-item>
-                <el-dropdown-item command="toggleSyntaxValidation">
-                  <el-checkbox 
-                    v-model="editorConfig.syntaxValidation" 
-                    @change="updateEditorConfig"
-                    @click.stop
-                  >
-                    语法校验
-                  </el-checkbox>
-                </el-dropdown-item>
-                <el-dropdown-item command="resetConfig" divided>
-                  恢复默认配置
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
+          </div>
       </el-header>
       
       <el-container>
@@ -178,11 +53,7 @@
                 <h3>Markdown 编辑器</h3>
                 <monaco-editor
                   v-model="markdownContent"
-                  language="todo-markdown"
-                  :theme="currentTheme"
-                  :enable-auto-complete="editorConfig.autoComplete"
-                  :enable-hover-info="editorConfig.hoverInfo"
-                  :enable-syntax-validation="editorConfig.syntaxValidation"
+                    :theme="currentTheme"
                   @update:modelValue="onContentChange"
                   @scroll="onEditorScroll"
                   :options="editorOptions"
@@ -268,52 +139,13 @@
                               <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
                             </div>
                             <div class="task-details">
-                              <div v-if="task.startTime !== null">
+                              <div v-if="task.time !== null">
                                 <i class="el-icon-time"></i>
-                                开始时间: 
-                                <span v-if="editingTaskId !== task.id || editingField !== 'startTime'" @click.stop="startEditing(task, 'startTime')">
-                                  {{ task.startTime || '未设置' }}
-                                </span>
-                                <span v-else>
-                                  <el-date-picker
-                                    v-model="editingValue"
-                                    type="date"
-                                    placeholder="选择日期"
-                                    size="small"
-                                    style="width: 120px;"
-                                    @change="saveEditing(task)"
-                                    @blur="saveEditing(task)"
-                                    @keyup.esc="cancelEditing"
-                                    ref="editInput"
-                                  ></el-date-picker>
-                                </span>
+                                时间: {{ task.time }}
                               </div>
-                              <div v-if="task.duration !== null">
-                                <i class="el-icon-timer"></i>
-                                用时: 
-                                <span v-if="editingTaskId !== task.id || editingField !== 'duration'" @click.stop="startEditing(task, 'duration')">
-                                  {{ task.duration || '未设置' }}
-                                </span>
-                                <span v-else>
-                                  <el-input 
-                                    v-model="editingValue" 
-                                    size="small" 
-                                    style="width: 100px;"
-                                    placeholder="例如: 2h, 1.5d"
-                                    @keyup.enter="saveEditing(task)"
-                                    @blur="saveEditing(task)"
-                                    @keyup.esc="cancelEditing"
-                                    ref="editInput"
-                                  >
-                                    <template #append>
-                                      <el-select v-model="durationUnit" style="width: 70px;">
-                                        <el-option label="小时" value="h"></el-option>
-                                        <el-option label="天" value="d"></el-option>
-                                        <el-option label="月" value="m"></el-option>
-                                      </el-select>
-                                    </template>
-                                  </el-input>
-                                </span>
+                              <div v-if="task.plannedTime !== null">
+                                <i class="el-icon-date"></i>
+                                计划时间: {{ task.plannedTime }}
                               </div>
                               <div v-if="task.dependencies.length > 0">
                                 <i class="el-icon-link"></i>
@@ -347,13 +179,13 @@
                             <span :class="{ 'completed': task.completed }">{{ task.title }}</span>
                           </div>
                           <div class="task-details">
-                            <div v-if="task.startTime !== null">
+                            <div v-if="task.time !== null">
                               <i class="el-icon-time"></i>
-                              开始时间: {{ task.startTime || '未设置' }}
+                              时间: {{ task.time }}
                             </div>
-                            <div v-if="task.duration !== null">
-                              <i class="el-icon-timer"></i>
-                              用时: {{ task.duration || '未设置' }}
+                            <div v-if="task.plannedTime !== null">
+                              <i class="el-icon-date"></i>
+                              计划时间: {{ task.plannedTime }}
                             </div>
                             <div v-if="task.dependencies.length > 0">
                               <i class="el-icon-link"></i>
@@ -429,7 +261,6 @@ import { parseMarkdown, validateSyntax } from '../utils/markdownParser'
 import fileManager from '../utils/fileManager'
 import MonacoEditor from '../components/MonacoEditor.vue'
 import AIAssistant from '../components/AIAssistant.vue'
-import { getEditorConfig, updateEditorConfig, resetEditorConfig } from '../utils/editorConfig'
 
 export default {
   name: 'TodoEditor',
@@ -468,9 +299,7 @@ export default {
     const selectedFile = ref('')
     const importData = ref('')
     
-    // 编辑器配置
-    const editorConfig = ref(getEditorConfig())
-    
+      
     // 任务显示控制
     const showCompleted = ref(true)
     const separateCompleted = ref(false)
@@ -783,44 +612,16 @@ export default {
         // 查找并更新对应的任务行
         const updatedLines = lines.map(line => {
           // 使用与markdownParser.js中相同的正则表达式来匹配任务
-          const taskRegex = /^(-\s*\[([ xX])\]\s*)(.+?)(\s+@(.*?))?(?:\s+(.*?))?(?:\s*->(.*?))?$/
+          const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)\s+(\S+?)\s+(\S+?)$/
           const match = line.match(taskRegex)
           
           if (match) {
-            const [, taskPrefix, checked, title, timePart, time, duration, dependencies] = match
+            const [, checked, title, time, plannedTime] = match
             // 检查标题是否匹配
             if (title.trim() === task.title.trim()) {
-              // 根据编辑的字段更新相应内容
-              if (editingField.value === 'startTime') {
-                // 更新时间
-                let timeValue = editingValue.value
-                // 如果是日期对象，格式化为 YYYY-MM-DD
-                if (timeValue instanceof Date) {
-                  const year = timeValue.getFullYear()
-                  const month = String(timeValue.getMonth() + 1).padStart(2, '0')
-                  const day = String(timeValue.getDate()).padStart(2, '0')
-                  timeValue = `${year}-${month}-${day}`
-                }
-                
-                const newTimePart = timeValue ? ` @${timeValue}` : ''
-                if (timePart) {
-                  // 如果原来有时间，替换它
-                  return line.replace(/\s+@.*?(?=\s+[0-9]|$|\s*->)/, newTimePart)
-                } else {
-                  // 如果原来没有时间，添加它
-                  return `${taskPrefix}${title}${newTimePart}${duration ? ` ${duration}` : ''}${dependencies ? ` -> ${dependencies}` : ''}`
-                }
-              } else if (editingField.value === 'duration') {
-                // 更新用时
-                const newDuration = editingValue.value ? ` ${editingValue.value}${durationUnit.value}` : ''
-                if (duration) {
-                  // 如果原来有用时，替换它
-                  return line.replace(/\s+[0-9]+(?:\.[0-9]+)?[hmd]/, newDuration)
-                } else {
-                  // 如果原来没有用时，添加它
-                  return `${taskPrefix}${title}${timePart || ''}${newDuration}${dependencies ? ` -> ${dependencies}` : ''}`
-                }
-              }
+              // 根据任务状态更新复选框
+              const newCheckbox = task.completed ? 'x' : ' '
+              return line.replace(/^(-\s*\[)[ xX](\].*)$/, `$1${newCheckbox}$2`)
             }
           }
           
@@ -863,21 +664,7 @@ export default {
       }
     }
     
-    // 更新编辑器配置
-    const updateEditorConfig = () => {
-      updateEditorConfig(editorConfig.value)
-    }
-    
-    // 处理配置命令
-    const handleConfigCommand = (command) => {
-      switch (command) {
-        case 'resetConfig':
-          resetEditorConfig()
-          editorConfig.value = getEditorConfig()
-          break
-      }
-    }
-    
+      
     const viewGraph = () => {
       router.push('/graph')
     }
@@ -919,45 +706,32 @@ export default {
     
     // 加载演示内容
     const loadDemoContent = () => {
-      const demoContent = `# Monaco Editor Todo Markdown 演示
+      const demoContent = `# 简化版待办任务演示
 
-欢迎使用基于Monaco Editor的Todo Markdown编辑器！
+欢迎使用简化版待办任务编辑器！
 
-## 🎯 基本任务语法
-- [ ] 学习Vue 3新特性 @today T:2h !high #学习
-- [x] 搭建项目框架 @2024-01-15 T:1d !high #项目
-- [ ] 完成项目文档 @tomorrow T:1h !medium #文档
+## 基本任务语法
+- [ ] 学习Vue 3 新特性 今天 2小时
+- [x] 搭建项目框架 昨天 1天
+- [ ] 完成项目文档 明天 1小时
 
-## ⏰ 时间标记测试
-- [ ] 今天的会议 @today
-- [ ] 明天的任务 @tomorrow
-- [ ] 具体日期任务 @2024-02-01
-- [ ] 带时间的任务 @09:00
+## 日常任务
+- [ ] 晨会 09:00 15分钟
+- [ ] 代码审查 下午 1小时
+- [ ] 健身 晚上 1小时
 
-## ⏱️ 用时估算测试
-- [ ] 快速修复 T:15min
-- [ ] 功能开发 T:2h
-- [ ] 长期项目 T:1w
+## 项目任务（带依赖）
+- [ ] 需求分析 周一 2天
+- [ ] 系统设计 周三 3天 ->需求分析
+- [ ] 编码实现 周五 1周 ->系统设计
+- [ ] 测试验证 下周一 2天 ->编码实现
 
-## 🚨 优先级测试
-- [ ] 紧急修复 !urgent #工作
-- [ ] 重要功能 !high #项目
-- [ ] 常规任务 !medium #日常
-- [ ] 可选优化 !low #优化
+## 任务依赖示例
+- [ ] 数据库设计 今天 3小时
+- [ ] API开发 明天 4小时 ->数据库设计
+- [ ] 前端界面 后天 2天 ->数据库设计
+- [ ] 集成测试 下周五 1天 ->API开发,前端界面`
 
-## 🔗 依赖关系测试
-- [ ] 数据库设计 @2024-02-01 T:1d !high #项目
-- [ ] API开发 @2024-02-03 T:2d !high #项目 -> 数据库设计
-- [ ] 前端开发 @2024-02-06 T:3d !medium #项目 -> API开发
-
-## 💡 使用技巧
-1. 按 Ctrl+Space 触发智能补全
-2. 鼠标悬停查看详细信息
-3. 语法错误会有波浪线标记
-4. 支持多种主题切换
-
-试试不同的主题和功能吧！`
-      
       if (confirm('加载演示内容将覆盖当前编辑器内容，确定继续吗？')) {
         markdownContent.value = demoContent
         onContentChange()
@@ -967,7 +741,7 @@ export default {
           fileManager.saveFile(currentFile.value.name, demoContent)
         }
         
-        alert('演示内容已加载！您可以体验Monaco Editor的所有功能。')
+        alert('演示内容已加载！')
       }
     }
     
@@ -1170,7 +944,6 @@ export default {
       completedTasks,
       editorOptions,
       currentTheme,
-      editorConfig,
       onContentChange,
       onEditorScroll,
       onPreviewScroll,
@@ -1179,16 +952,11 @@ export default {
       onTouchMove,
       onTouchEnd,
       onTaskClick,
-      startEditing,
-      saveEditing,
-      cancelEditing,
       checkSyntax,
       saveFile,
       viewGraph,
       handleFileCommand,
       handleThemeCommand,
-      handleConfigCommand,
-      updateEditorConfig,
       loadDemoContent,
       createNewFile,
       openSelectedFile,

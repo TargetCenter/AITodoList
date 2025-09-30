@@ -9,8 +9,6 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as monaco from 'monaco-editor'
 import { todoLanguageDefinition, todoTheme, todoDarkTheme } from '../utils/todoLanguage'
 import { todoCompletionProvider } from '../utils/todoCompletion'
-import { todoHoverProvider } from '../utils/todoHover'
-import { todoValidationProvider } from '../utils/todoValidation'
 
 // 配置Monaco Editor的Web Worker
 if (typeof window !== 'undefined' && !window.MonacoEnvironment) {
@@ -42,11 +40,7 @@ export default {
       type: String,
       default: ''
     },
-    language: {
-      type: String,
-      default: 'todo-markdown'
-    },
-    theme: {
+      theme: {
       type: String,
       default: 'vs'
     },
@@ -54,20 +48,7 @@ export default {
       type: Object,
       default: () => ({})
     },
-    // 新增功能控制props
-    enableAutoComplete: {
-      type: Boolean,
-      default: false
     },
-    enableHoverInfo: {
-      type: Boolean,
-      default: false
-    },
-    enableSyntaxValidation: {
-      type: Boolean,
-      default: false
-    }
-  },
   emits: ['update:modelValue', 'scroll', 'change', 'focus', 'blur'],
   setup(props, { emit }) {
     const editorContainer = ref(null)
@@ -81,86 +62,16 @@ export default {
       fontSize: 14,
       fontFamily: 'Consolas, Monaco, "Courier New", monospace',
       lineNumbers: 'on',
-      minimap: { enabled: true },
+      minimap: { enabled: false },
       scrollBeyondLastLine: false,
       wordWrap: 'on',
-      wrappingIndent: 'indent',
       folding: true,
-      foldingStrategy: 'indentation',
-      showFoldingControls: 'always',
       renderWhitespace: 'selection',
-      renderControlCharacters: false,
-      renderLineHighlight: 'line',
       cursorBlinking: 'blink',
-      cursorSmoothCaretAnimation: true,
       smoothScrolling: true,
-      mouseWheelScrollSensitivity: 1,
-      fastScrollSensitivity: 5,
       scrollbar: {
         vertical: 'visible',
-        horizontal: 'visible',
-        useShadows: false,
-        verticalHasArrows: true,
-        horizontalHasArrows: true,
-        verticalScrollbarSize: 17,
-        horizontalScrollbarSize: 17,
-        arrowSize: 30
-      },
-      suggest: {
-        insertMode: 'replace',
-        filterGraceful: true,
-        showKeywords: true,
-        showSnippets: true,
-        showFunctions: true,
-        showConstructors: true,
-        showFields: true,
-        showVariables: true,
-        showClasses: true,
-        showStructs: true,
-        showInterfaces: true,
-        showModules: true,
-        showProperties: true,
-        showEvents: true,
-        showOperators: true,
-        showUnits: true,
-        showValues: true,
-        showConstants: true,
-        showEnums: true,
-        showEnumMembers: true,
-        showColors: true,
-        showFiles: true,
-        showReferences: true,
-        showFolders: true,
-        showTypeParameters: true,
-        showIssues: true,
-        showUsers: true,
-        showWords: true
-      },
-      quickSuggestions: {
-        other: true,
-        comments: true,
-        strings: true
-      },
-      quickSuggestionsDelay: 100,
-      parameterHints: {
-        enabled: true,
-        cycle: true
-      },
-      hover: {
-        enabled: true,
-        delay: 300,
-        sticky: true
-      },
-      contextmenu: true,
-      mouseWheelZoom: true,
-      multiCursorModifier: 'ctrlCmd',
-      accessibilitySupport: 'auto',
-      find: {
-        seedSearchStringFromSelection: 'always',
-        autoFindInSelection: 'never',
-        globalFindClipboard: false,
-        addExtraSpaceOnTop: true,
-        loop: true
+        horizontal: 'visible'
       }
     }
 
@@ -211,14 +122,8 @@ export default {
       monaco.editor.defineTheme('todo-light', todoTheme)
       monaco.editor.defineTheme('todo-dark', todoDarkTheme)
 
-      // // 注册补全提供者
-      // monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
-
-      // // 注册悬停提供者
-      // monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
-
-      // // 注册语法校验
-      // todoValidationProvider.register()
+      // 注册补全提供者
+      monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
     }
 
     // 创建编辑器
@@ -228,25 +133,12 @@ export default {
       // 注册自定义语言
       registerTodoLanguage()
 
-      // 根据props动态注册功能
-      if (props.enableAutoComplete) {
-        monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
-      }
-
-      if (props.enableHoverInfo) {
-        monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
-      }
-
-      if (props.enableSyntaxValidation) {
-        todoValidationProvider.register()
-      }
-
       // 合并选项
       const editorOptions = {
         ...defaultOptions,
         ...props.options,
         value: props.modelValue,
-        language: props.language,
+        language: 'todo-markdown',
         theme: props.theme
       }
 
@@ -285,10 +177,7 @@ export default {
       // 设置编辑器主题
       monaco.editor.setTheme(props.theme)
 
-      // 启用语法校验
-      await nextTick()
-      todoValidationProvider.validateModel(model)
-    }
+      }
 
     // 销毁编辑器
     const destroyEditor = () => {
@@ -323,13 +212,7 @@ export default {
       }
     }
 
-    // 设置编辑器语言
-    const setLanguage = (language) => {
-      if (model) {
-        monaco.editor.setModelLanguage(model, language)
-      }
-    }
-
+  
     // 格式化文档
     const formatDocument = () => {
       if (editor) {
@@ -363,35 +246,14 @@ export default {
       setTheme(newTheme)
     })
 
-    watch(() => props.language, (newLanguage) => {
-      setLanguage(newLanguage)
-    })
-
+    
     watch(() => props.options, (newOptions) => {
       if (editor) {
         editor.updateOptions(newOptions)
       }
     }, { deep: true })
 
-    // 监听功能启用props的变化
-    watch(() => props.enableAutoComplete, (enabled) => {
-      if (enabled && model) {
-        monaco.languages.registerCompletionItemProvider('todo-markdown', todoCompletionProvider)
-      }
-    })
-
-    watch(() => props.enableHoverInfo, (enabled) => {
-      if (enabled && model) {
-        monaco.languages.registerHoverProvider('todo-markdown', todoHoverProvider)
-      }
-    })
-
-    watch(() => props.enableSyntaxValidation, (enabled) => {
-      if (enabled && model) {
-        todoValidationProvider.register()
-      }
-    })
-
+  
     onMounted(async () => {
       await createEditor()
 
@@ -416,7 +278,6 @@ export default {
       setValue,
       getValue,
       setTheme,
-      setLanguage,
       formatDocument,
       triggerSuggest,
       getEditor,

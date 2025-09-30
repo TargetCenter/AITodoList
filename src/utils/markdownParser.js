@@ -11,12 +11,12 @@ export function parseMarkdown(markdown) {
   const taskMap = new Map()
   
   lines.forEach((line, index) => {
-    // 匹配待办任务格式: - [ ] 任务名称 @开始时间 T:用时 ->依赖
-    const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}:\d{2}|\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}))?(?:\s+T:(\d+(?:\.\d+)?[hmd]))?(?:\s*->(.+))?$/
+    // 匹配待办任务格式: - [ ] 任务名称 时间 计划时间 ->依赖
+    const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)\s+(\S+?)\s+(\S+?)(?:\s*->\s*(.+))?$/
     const match = line.match(taskRegex)
     
     if (match) {
-      const [, checked, title, startTime, duration, dependenciesStr] = match
+      const [, checked, title, time, plannedTime, dependenciesStr] = match
       const completed = checked === 'x' || checked === 'X'
       const dependencies = dependenciesStr ? dependenciesStr.split(',').map(d => d.trim()) : []
       
@@ -24,8 +24,8 @@ export function parseMarkdown(markdown) {
         id: `task-${index}`,
         title,
         completed,
-        startTime: startTime || null,
-        duration: duration || null,
+        time: time || null,
+        plannedTime: plannedTime || null,
         dependencies
       }
       
@@ -61,29 +61,13 @@ export function validateSyntax(markdown) {
         return
       }
       
-      // 检查时间格式
-      const timeMatch = line.match(/@(\S+)/)
-      if (timeMatch) {
-        const timeStr = timeMatch[1]
-        // 简单验证时间格式
-        if (!/^(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|\d{2}:\d{2}|\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})$/.test(timeStr)) {
-          errors.push({
-            line: lineNumber + 1,
-            message: `时间格式错误: ${timeStr}，应为YYYY-MM-DD 或HH:MM`
-          })
-        }
-      }
-      
-      // 检查用时格式
-      const durationMatch = line.match(/T:(\d+(?:\.\d+)?[hmd])/)
-      if (durationMatch) {
-        const durationStr = durationMatch[1]
-        if (!/^\d+(?:\.\d+)?[hmd]$/.test(durationStr)) {
-          errors.push({
-            line: lineNumber + 1,
-            message: `用时格式错误: T:${durationStr}，应为T:数字+h|m|d (例如 T:2h, T:1.5d)`
-          })
-        }
+      // 检查基本格式
+      const parts = line.trim().split(/\s+/)
+      if (parts.length < 4) {
+        errors.push({
+          line: lineNumber + 1,
+          message: '任务格式错误，应为: - [ ] 任务名称 时间 计划时间'
+        })
       }
     } else if (!line.trim().startsWith('#') && !line.trim().startsWith('>')) {
       // 不是待办任务也不是标题或引用，给出提示
