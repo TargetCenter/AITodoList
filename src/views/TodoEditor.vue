@@ -19,6 +19,7 @@
                 <el-dropdown-item command="save">保存文件</el-dropdown-item>
                 <el-dropdown-item command="open">打开文件</el-dropdown-item>
                 <el-dropdown-item command="delete" divided>删除当前文件</el-dropdown-item>
+                <el-dropdown-item command="download">下载文件</el-dropdown-item>
                 <el-dropdown-item command="export">导出数据</el-dropdown-item>
                 <el-dropdown-item command="import">导入数据</el-dropdown-item>
                 <el-dropdown-item command="demo" divided>加载演示内容</el-dropdown-item>
@@ -684,6 +685,9 @@ export default {
         case 'delete':
           deleteCurrentFile()
           break
+        case 'download':
+          downloadFile()
+          break
         case 'export':
           exportData()
           break
@@ -799,6 +803,32 @@ export default {
         }
         
         alert('文件已删除')
+      }
+    }
+
+    // 下载文件
+    const downloadFile = () => {
+      if (!currentFile.value) {
+        alert('没有当前文件可下载')
+        return
+      }
+      
+      try {
+        // 创建下载链接
+        const blob = new Blob([markdownContent.value], { type: 'text/markdown' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = currentFile.value.name
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+        
+        alert('文件下载成功')
+      } catch (error) {
+        console.error('下载文件失败:', error)
+        alert('下载文件失败')
       }
     }
 
@@ -961,6 +991,7 @@ export default {
       createNewFile,
       openSelectedFile,
       deleteCurrentFile,
+      downloadFile,
       exportData,
       importDataConfirm,
       clearAllData,

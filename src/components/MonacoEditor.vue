@@ -10,28 +10,24 @@ import * as monaco from 'monaco-editor'
 import { todoLanguageDefinition, todoTheme, todoDarkTheme } from '../utils/todoLanguage'
 import { todoCompletionProvider } from '../utils/todoCompletion'
 
-// 配置Monaco Editor的Web Worker
-if (typeof window !== 'undefined' && !window.MonacoEnvironment) {
+// 配置Monaco Editor Worker - 禁用Worker避免404错误
+if (typeof window !== 'undefined') {
   window.MonacoEnvironment = {
     getWorkerUrl: function (moduleId, label) {
-      // 使用简单的Worker配置，避免复杂的路径问题
-      // 在生产环境中，建议使用monaco-editor-webpack-plugin或vite-plugin-monaco-editor
-      if (label === 'json') {
-        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/json/json.worker.js';
-      }
-      if (label === 'css' || label === 'scss' || label === 'less') {
-        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/css/css.worker.js';
-      }
-      if (label === 'html' || label === 'handlebars' || label === 'razor') {
-        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/html/html.worker.js';
-      }
-      if (label === 'typescript' || label === 'javascript') {
-        return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/language/typescript/ts.worker.js';
-      }
-      return 'https://unpkg.com/monaco-editor@0.53.0/min/vs/editor/editor.worker.js';
+      // 返回一个空的blob URL来避免404错误
+      const emptyWorkerCode = 'self.onmessage = function(e) { /* Worker disabled */ };';
+      const blob = new Blob([emptyWorkerCode], { type: 'application/javascript' });
+      return URL.createObjectURL(blob);
+    },
+    getWorker: function (moduleId, label) {
+      // 返回一个简单的worker来避免错误
+      const workerCode = 'self.onmessage = function(e) { /* Worker disabled */ };';
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      return new Worker(URL.createObjectURL(blob));
     }
-  }
+  };
 }
+
 
 export default {
   name: 'MonacoEditor',
@@ -65,14 +61,38 @@ export default {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       wordWrap: 'on',
-      folding: true,
-      renderWhitespace: 'selection',
+      folding: false,
+      renderWhitespace: 'none',
       cursorBlinking: 'blink',
       smoothScrolling: true,
       scrollbar: {
         vertical: 'visible',
         horizontal: 'visible'
-      }
+      },
+      // 启用基本功能
+      semanticHighlighting: false,
+      colorDecorators: false,
+      quickSuggestions: true,
+      parameterHints: { enabled: true },
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnEnter: 'on',
+      tabCompletion: 'on',
+      wordBasedSuggestions: 'off',
+      links: false,
+      autoIndent: 'none',
+      formatOnPaste: false,
+      formatOnType: false,
+      // 禁用其他高级功能
+      codeActions: false,
+      codeLens: false,
+      lightbulb: { enabled: false },
+      occurrencesHighlight: false,
+      selectionHighlight: false,
+      highlightActiveIndentGuide: false,
+      showFoldingControls: 'never',
+      mouseWheelZoom: false,
+      multiCursorModifier: 'ctrlCmd',
+      accessibilitySupport: 'off'
     }
 
     // 注册自定义语言
