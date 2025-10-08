@@ -1,17 +1,17 @@
 <template>
-  <div class="todo-graph">
-    <el-container>
-      <el-header>
-        <h1>待办任务关系图</h1>
+  <div class="todo-graph min-h-screen bg-gray-50">
+    <div class="flex flex-col">
+      <header class="bg-gray-100 text-gray-800 h-16 flex items-center justify-between px-5">
+        <h1 class="text-xl font-bold">待办任务关系图</h1>
         <div class="toolbar">
-          <el-button @click="goBack">返回编辑器</el-button>
+          <button @click="goBack" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">返回编辑器</button>
         </div>
-      </el-header>
+      </header>
       
-      <el-main>
+      <main class="flex-1 p-5">
         <div ref="chartContainer" class="chart-container"></div>
-      </el-main>
-    </el-container>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -187,24 +187,11 @@ export default {
 </script>
 
 <style scoped>
-.todo-graph {
-  height: 100%;
-}
-
-.el-header {
-  background-color: #f5f5f5;
-  color: #333;
-  text-align: center;
-  line-height: 60px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .chart-container {
   width: 100%;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 120px);
   background-color: #fff;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

@@ -16,29 +16,6 @@ This is a Vue 3-based todo task management tool that supports Markdown syntax fo
 - Monaco Editor as the code editor
 - LocalStorage for data persistence
 
-## Project Structure
-
-```
-src/
-├── main.js              # Application entry point
-├── App.vue              # Root component
-├── router/              # Vue Router configuration
-├── views/               # Page components
-│   ├── TodoEditor.vue   # Markdown todo editor with Monaco Editor
-│   └── TodoGraph.vue    # ECharts relationship visualization
-├── components/          # Reusable components
-│   ├── MonacoEditor.vue # Monaco Editor component with custom language support
-│   └── AIAssistant.vue  # AI assistant component
-├── utils/               # Utility functions
-│   ├── markdownParser.js # Markdown parsing and validation
-│   ├── fileManager.js    # File management with localStorage persistence
-│   ├── todoLanguage.js   # Custom Monaco language definition for todo-markdown
-│   ├── todoCompletion.js # Monaco completion provider for todo syntax
-│   ├── todoHover.js      # Monaco hover provider for todo syntax
-│   └── todoValidation.js # Monaco validation provider for todo syntax
-└── assets/              # Static assets
-```
-
 ## Development Commands
 
 ### Install Dependencies
@@ -62,43 +39,6 @@ npm run build
 npm run serve
 ```
 
-## Core Features
-
-1. **Enhanced Markdown Syntax Support**:
-   - Task declaration with `[ ]` (incomplete) and `[x]` (complete)
-   - Time specification with `@` symbol
-   - Duration specification with units (h, d, m)
-   - Task dependencies with `->` symbol
-
-2. **Monaco Editor Integration**:
-   - Custom "todo-markdown" language with syntax highlighting
-   - IntelliSense with auto-completion for todo syntax
-   - Hover information for syntax elements
-   - Real-time syntax validation with error markers
-   - Multiple themes including custom "todo-light" and "todo-dark"
-
-3. **Real-time Syntax Checking**:
-   - Live Markdown syntax validation
-   - Error highlighting and feedback in the editor
-   - Detailed error messages with line numbers
-
-4. **Task Relationship Visualization**:
-   - ECharts relationship graph showing task dependencies
-   - Arrow directions indicate dependency flow
-   - Color coding for completed/unfinished tasks
-   - Node size based on task duration
-   - Interactive tooltips with task details
-
-5. **File Management**:
-   - Multiple todo group files support
-   - Create, save, open, delete, and export/import functionality
-   - localStorage persistence for all files
-   - File change tracking with automatic saving
-
-6. **Mobile-friendly Task Interaction**:
-   - Swipe gestures to complete tasks on mobile devices
-   - Responsive design for all screen sizes
-
 ## Architecture Overview
 
 The application follows a component-based architecture with Vue 3:
@@ -118,6 +58,13 @@ The application follows a component-based architecture with Vue 3:
   - `todoCompletion.js`: Provides IntelliSense completions for todo syntax
   - `todoHover.js`: Provides hover information for todo syntax elements
   - `todoValidation.js`: Provides real-time syntax validation for todo syntax
+
+## Monaco Editor Configuration
+
+Monaco Editor is configured with disabled workers to avoid 404 errors. The editor supports:
+- Custom "todo-markdown" language with syntax highlighting
+- Multiple themes (vs, vs-dark, todo-light, todo-dark)
+- IntelliSense completions, hover information, and validation
 
 ## Markdown Syntax
 

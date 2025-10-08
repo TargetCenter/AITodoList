@@ -1,54 +1,56 @@
 <template>
-  <div class="api-test">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>Pollinations.ai API 测试</span>
+  <div class="api-test p-5 max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="card-header font-bold text-lg">
+          Pollinations.ai API 测试
         </div>
-      </template>
+      </div>
       
-      <div class="test-content">
-        <el-input
+      <div class="test-content p-6 space-y-4">
+        <textarea
           v-model="testPrompt"
-          type="textarea"
           :rows="3"
           placeholder="输入测试提示词..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         
-        <div class="button-group">
-          <el-button 
-            type="primary" 
+        <div class="button-group flex gap-2">
+          <button 
             @click="testAPI"
-            :loading="isLoading"
+            :disabled="isLoading"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            测试 API
-          </el-button>
-          <el-button @click="clearResult">清空结果</el-button>
+            <span v-if="!isLoading">测试 API</span>
+            <span v-else>测试中...</span>
+          </button>
+          <button @click="clearResult" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">清空结果</button>
         </div>
         
-        <div v-if="result" class="result-area">
-          <h4>API 响应结果：</h4>
+        <div v-if="result" class="result-area border border-gray-200 rounded-md p-4 bg-gray-50">
+          <h4 class="text-base font-semibold mb-2 text-gray-800">API 响应结果：</h4>
           <div class="result-content">
-            <pre>{{ result }}</pre>
+            <pre class="m-0 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-gray-700">{{ result }}</pre>
           </div>
         </div>
         
-        <div v-if="error" class="error-area">
-          <el-alert
-            :title="error"
-            type="error"
-            :closable="false"
-            show-icon
-          />
+        <div v-if="error" class="error-area mt-2">
+          <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+              </svg>
+              {{ error }}
+            </div>
+          </div>
         </div>
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
 import pollinationsAPI from '../utils/pollinationsAPI.js'
 
 export default {
@@ -61,7 +63,7 @@ export default {
 
     const testAPI = async () => {
       if (!testPrompt.value.trim()) {
-        ElMessage.warning('请输入测试提示词')
+        alert('请输入测试提示词')
         return
       }
 
@@ -72,10 +74,10 @@ export default {
       try {
         const response = await pollinationsAPI.generateText(testPrompt.value)
         result.value = response
-        ElMessage.success('API 测试成功')
+        alert('API 测试成功')
       } catch (err) {
         error.value = err.message
-        ElMessage.error('API 测试失败')
+        alert('API 测试失败')
       } finally {
         isLoading.value = false
       }
@@ -99,51 +101,5 @@ export default {
 </script>
 
 <style scoped>
-.api-test {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.card-header {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.test-content {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.button-group {
-  display: flex;
-  gap: 10px;
-}
-
-.result-area {
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  padding: 15px;
-  background-color: #f9f9f9;
-}
-
-.result-area h4 {
-  margin: 0 0 10px 0;
-  color: #303133;
-}
-
-.result-content pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #303133;
-}
-
-.error-area {
-  margin-top: 10px;
-}
+/* 样式已通过 Tailwind CSS 类处理 */
 </style>

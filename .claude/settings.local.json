@@ -21,7 +21,9 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "Bash(npm uninstall:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(npm run build)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
