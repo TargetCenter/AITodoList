@@ -114,6 +114,14 @@ npm run serve
 
 ## 开发注意事项
 
+### Vite 版本降级
+
+**原因**：为了解决 Vue DevTools 与 WebStorm IDE 集成问题
+
+- Vite v7.x 存在与 Vue DevTools 的兼容性问题，导致在浏览器 DevTools 中点击组件文件无法在 WebStorm 中打开
+- 已降级到 Vite v6.3.6，该版本与 Vue DevTools v8.0.2 完全兼容
+- 配置了 `launchEditor: 'webstorm'` 以支持直接从浏览器 DevTools 打开 Vue 文件
+
 ### Tailwind CSS 版本兼容性
 
 **重要**：本项目必须使用 Tailwind CSS v3.x，不要升级到 v4.x

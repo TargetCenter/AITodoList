@@ -24,7 +24,10 @@
       "Bash(start:*)",
       "Bash(npm run build)",
       "Bash(grep:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(code:*)",
+      "Bash(wstorm:*)",
+      "Bash(webstorm:*)"
     ],
     "deny": [],
     "ask": []

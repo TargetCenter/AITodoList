@@ -6,15 +6,21 @@ import {fileURLToPath, URL} from 'node:url'
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [
-        vueDevTools(),
         vue(),
+        vueDevTools({
+            launchEditor: 'webstorm'
+        }),
     ],
     server: {
         host: '0.0.0.0',
-        port: 3000
+        port: 3000,
+        fs: {
+            strict: false
+        }
     },
     build: {
-        outDir: 'dist'
+        outDir: 'dist',
+        sourcemap: true
     },
     resolve: {
         alias: {
@@ -22,6 +28,6 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        include: ['monaco-editor']
+        include: ['monaco-editor', '@monaco-editor/loader']
     }
 })
