@@ -100,6 +100,8 @@ npm run serve
 - [Vite](https://vitejs.dev/)
 - [Element Plus](https://element-plus.org/)
 - [ECharts](https://echarts.apache.org/)
+- [Tailwind CSS 3](https://tailwindcss.com/)
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/)
 
 ## 使用说明
 
@@ -109,6 +111,61 @@ npm run serve
 4. **保存文件**：点击"文件管理" -> "保存文件"保存当前待办组
 5. **打开文件**：点击"文件管理" -> "打开文件"选择已有待办组
 6. **查看关系图**：点击"查看关系图"按钮查看任务依赖关系可视化展示
+
+## 开发注意事项
+
+### Tailwind CSS 版本兼容性
+
+**重要**：本项目必须使用 Tailwind CSS v3.x，不要升级到 v4.x
+
+#### 问题描述
+- Tailwind CSS v4 是实验性版本，API 不稳定
+- v4 的配置方式和 PostCSS 插件与 v3 完全不同
+- v4 中许多 v3 的功能（如响应式样式）可能无法正常工作
+
+#### 正确配置
+```json
+{
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}
+```
+
+#### PostCSS 配置 (postcss.config.js)
+```javascript
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+```
+
+#### 错误配置（会导致响应式样式失效）
+```javascript
+// 错误：v4 配置方式
+module.exports = {
+  plugins: {
+    '@tailwindcss/postcss': {},  // 这是 v4 的插件
+    autoprefixer: {},
+  },
+}
+```
+
+#### 解决方案
+如果遇到响应式样式（如 `md:grid-cols-2`）不生效的问题：
+
+1. 检查 package.json 中的 tailwindcss 版本
+2. 确保使用 v3.4.0 而不是 v4.x
+3. 如果安装了 v4，请降级：
+   ```bash
+   npm uninstall tailwindcss @tailwindcss/postcss
+   npm install -D tailwindcss@^3.4.0 postcss@^8.4.0
+   ```
+4. 更新 postcss.config.js 使用标准配置
 
 ## 依赖关系图说明
 
