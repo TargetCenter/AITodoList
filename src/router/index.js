@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import TodoEditor from '../views/TodoEditor.vue'
 import TodoGraph from '../views/TodoGraph.vue'
-import APITest from '../components/APITest.vue'
 import Home from  '../views/main.vue'
 
 const routes = [
@@ -20,11 +19,6 @@ const routes = [
     name: 'TodoGraph',
     component: TodoGraph
   },
-  {
-    path: '/test',
-    name: 'APITest',
-    component: APITest
-  }
 ]
 
 const router = createRouter({
