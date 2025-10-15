@@ -20,6 +20,7 @@
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.38.2",
     "@monaco-editor/loader": "^1.5.0",
+    "@supabase/supabase-js": "^2.75.0",
     "@uiw/codemirror-theme-github": "^4.25.1",
     "echarts": "^6.0.0",
     "monaco-editor": "^0.52.2",

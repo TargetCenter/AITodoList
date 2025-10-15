@@ -1,5 +1,5 @@
 <script setup>
-import {ref} from 'vue'
+import {onMounted, ref} from 'vue'
 import Head from "@/components/Head.vue";
 import Footer from "@/components/Footer.vue";
 import MonacoEditor from "@/components/MonacoEditor.vue";
@@ -7,6 +7,60 @@ import MonacoEditor from "@/components/MonacoEditor.vue";
 import fileManager from '../utils/fileManager'
 import AIAssistant from '../components/AIAssistant.vue'
 import {parseMarkdown, validateSyntax} from "@/utils/markdownParser";
+
+import { supabaseClient, checkTableExists } from '@/utils/supabaseClient.ts'
+
+const todos = ref([])
+
+async function createTodoListTable() {
+    console.log('请在Supabase控制台的SQL编辑器中执行以下SQL语句来创建表格:')
+    console.log(`
+        CREATE TABLE IF NOT EXISTS todoList (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            content TEXT NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- 创建自动更新updated_at的触发器
+        CREATE OR REPLACE FUNCTION update_updated_at_column()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = CURRENT_TIMESTAMP;
+            RETURN NEW;
+        END;
+        $$ language 'plpgsql';
+
+        CREATE TRIGGER update_todoList_updated_at
+            BEFORE UPDATE ON todoList
+            FOR EACH ROW
+            EXECUTE FUNCTION update_updated_at_column();
+    `)
+    return false // 因为无法通过客户端创建表格，返回false
+}
+
+async function getTodos() {
+    if (!await checkTableExists("todoList")) {
+        console.log('todoList表格不存在，正在创建...')
+        await createTodoListTable()
+    }
+    
+    const { data, error } = await supabaseClient
+        .from('todoList')
+        .select('*')
+        .order('created_at', { ascending: false })
+    
+    if (error) {
+        console.error('获取todos失败:', error)
+        todos.value = []
+    } else {
+        todos.value = data || []
+    }
+}
+
+onMounted(() => {
+    getTodos()
+})
 
 const mdTodoList = ref('');
 // const currentFile = ref('');
@@ -66,7 +120,6 @@ const editorOptions = ref({
         <Head/>
         <!-- 主要内容区域 -->
         <main class="grid grid-cols-1 lg:grid-cols-2 flex-1">
-            <!-- 主要内容区域 - 使用flexbox布局 -->
             <!-- 编辑器区域：PC端显示，移动端隐藏 -->
             <div class="hidden lg:block">
                 <div class=" h-full">
@@ -88,6 +141,9 @@ const editorOptions = ref({
                     </h2>
                     <div class="prose prose-sm max-w-none h-96 lg:h-full overflow-auto">
                         {{ mdTodoList }}
+                        <ul>
+                            <li v-for="todo in todos" :key="todo.id">{{ todo.name }}</li>
+                        </ul>
                     </div>
                 </div>
             </div>
