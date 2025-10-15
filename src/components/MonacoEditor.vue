@@ -4,22 +4,22 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as monaco from 'monaco-editor'
-import { todoLanguageDefinition, todoTheme, todoDarkTheme } from '../utils/todoLanguage'
-import { todoCompletionProvider } from '../utils/todoCompletion'
+import { todoLanguageDefinition, todoTheme, todoDarkTheme } from '@/utils/todoLanguage'
+import { todoCompletionProvider } from '@/utils/todoCompletion'
 
 // 配置Monaco Editor Worker - 禁用Worker避免404错误
 if (typeof window !== 'undefined') {
   window.MonacoEnvironment = {
-    getWorkerUrl: function (moduleId, label) {
+    getWorkerUrl: function (moduleId: string, label: string): string {
       // 返回一个空的blob URL来避免404错误
       const emptyWorkerCode = 'self.onmessage = function(e) { /* Worker disabled */ };';
       const blob = new Blob([emptyWorkerCode], { type: 'application/javascript' });
       return URL.createObjectURL(blob);
     },
-    getWorker: function (moduleId, label) {
+    getWorker: function (moduleId: string, label: string): Worker {
       // 返回一个简单的worker来避免错误
       const workerCode = 'self.onmessage = function(e) { /* Worker disabled */ };';
       const blob = new Blob([workerCode], { type: 'application/javascript' });
@@ -28,29 +28,39 @@ if (typeof window !== 'undefined') {
   };
 }
 
+interface Props {
+  modelValue?: string
+  theme?: string
+  options?: Record<string, any>
+}
 
-export default {
-  name: 'MonacoEditor',
-  props: {
-    modelValue: {
-      type: String,
-      default: ''
-    },
-      theme: {
-      type: String,
-      default: 'vs'
-    },
-    options: {
-      type: Object,
-      default: () => ({})
-    },
-    },
-  emits: ['update:modelValue', 'scroll', 'change', 'focus', 'blur'],
-  setup(props, { emit }) {
-    const editorContainer = ref(null)
-    let editor = null
-    let model = null
-    let resizeObserver = null
+interface Emits {
+  (e: 'update:modelValue', value: string): void
+  (e: 'scroll', event: {
+    scrollTop: number
+    scrollLeft: number
+    scrollHeight: number
+    scrollWidth: number
+    clientHeight: number
+    clientWidth: number
+  }): void
+  (e: 'change', value: string): void
+  (e: 'focus'): void
+  (e: 'blur'): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
+  theme: 'vs',
+  options: () => ({})
+})
+
+const emit = defineEmits<Emits>()
+
+const editorContainer = ref<HTMLElement | null>(null)
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
+let model: monaco.editor.ITextModel | null = null
+let resizeObserver: ResizeObserver | null = null
 
     // 默认编辑器选项
     const defaultOptions = {
@@ -214,19 +224,19 @@ export default {
     }
 
     // 设置编辑器值
-    const setValue = (value) => {
+    const setValue = (value: string) => {
       if (editor && model && value !== model.getValue()) {
         model.setValue(value)
       }
     }
 
     // 获取编辑器值
-    const getValue = () => {
+    const getValue = (): string => {
       return model ? model.getValue() : ''
     }
 
     // 设置编辑器主题
-    const setTheme = (theme) => {
+    const setTheme = (theme: string) => {
       if (editor) {
         monaco.editor.setTheme(theme)
       }
@@ -234,40 +244,40 @@ export default {
 
   
     // 格式化文档
-    const formatDocument = () => {
+    const formatDocument = (): void => {
       if (editor) {
         editor.getAction('editor.action.formatDocument').run()
       }
     }
 
     // 触发建议
-    const triggerSuggest = () => {
+    const triggerSuggest = (): void => {
       if (editor) {
         editor.getAction('editor.action.triggerSuggest').run()
       }
     }
 
     // 获取编辑器实例
-    const getEditor = () => {
+    const getEditor = (): monaco.editor.IStandaloneCodeEditor | null => {
       return editor
     }
 
     // 获取模型实例
-    const getModel = () => {
+    const getModel = (): monaco.editor.ITextModel | null => {
       return model
     }
 
     // 监听props变化
-    watch(() => props.modelValue, (newValue) => {
+    watch(() => props.modelValue, (newValue: string) => {
       setValue(newValue)
     })
 
-    watch(() => props.theme, (newTheme) => {
+    watch(() => props.theme, (newTheme: string) => {
       setTheme(newTheme)
     })
 
     
-    watch(() => props.options, (newOptions) => {
+    watch(() => props.options, (newOptions: Record<string, any>) => {
       if (editor) {
         editor.updateOptions(newOptions)
       }
@@ -284,7 +294,7 @@ export default {
             editor.layout()
           }
         })
-        resizeObserver.observe(editorContainer.value)
+        resizeObserver.observe(editorContainer.value!)
       }
     })
 
@@ -293,7 +303,7 @@ export default {
     })
 
     // 暴露方法给父组件
-    return {
+    defineExpose({
       editorContainer,
       setValue,
       getValue,
@@ -302,9 +312,7 @@ export default {
       triggerSuggest,
       getEditor,
       getModel
-    }
-  }
-}
+    })
 </script>
 
 <style scoped>
