@@ -10,6 +10,12 @@
       @close="hideAutoComplete"
       ref="autoCompleteRef"
     />
+    <TaskInputPanel
+      :visible="taskInputVisible"
+      :position="taskInputPosition"
+      @confirm="onTaskInputConfirm"
+      @cancel="hideTaskInput"
+    />
   </div>
 </template>
 
@@ -19,13 +25,16 @@ import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { markdown } from '@codemirror/lang-markdown'
 import AutoComplete from './AutoComplete.vue'
+import TaskInputPanel from './TaskInputPanel.vue'
 import { getAutoCompleteSuggestions, processTemplate } from '@/utils/autoCompleteData'
 import { parseMarkdown } from '@/utils/markdownParser'
+import { generateTaskMarkdown } from '@/utils/taskGenerator'
 
 export default {
   name: 'CodeMirrorEditor',
   components: {
-    AutoComplete
+    AutoComplete,
+    TaskInputPanel
   },
   props: {
     modelValue: {
@@ -48,6 +57,14 @@ export default {
       line: '',
       cursor: 0,
       lineStart: 0
+    })
+
+    // 任务输入面板相关状态
+    const taskInputVisible = ref(false)
+    const taskInputPosition = ref({ top: 0, left: 0 })
+    const taskInputContext = ref({
+      lineStart: 0,
+      lineEnd: 0
     })
 
     // 获取当前任务列表用于依赖补全
@@ -91,6 +108,47 @@ export default {
       autoCompleteVisible.value = false
       autoCompleteItems.value = []
       autoCompleteFilter.value = ''
+    }
+
+    // 显示任务输入面板
+    const showTaskInput = (lineStart, lineEnd) => {
+      const coords = view.coordsAtPos(lineEnd)
+      if (coords) {
+        const editorRect = editorContainer.value.getBoundingClientRect()
+        taskInputPosition.value = {
+          top: coords.bottom - editorRect.top + editorContainer.value.scrollTop + 10,
+          left: coords.left - editorRect.left + editorContainer.value.scrollLeft
+        }
+      }
+      
+      taskInputContext.value = { lineStart, lineEnd }
+      taskInputVisible.value = true
+    }
+
+    // 隐藏任务输入面板
+    const hideTaskInput = () => {
+      taskInputVisible.value = false
+      taskInputContext.value = { lineStart: 0, lineEnd: 0 }
+    }
+
+    // 处理任务输入确认
+    const onTaskInputConfirm = (params) => {
+      if (!view) return
+
+      const { lineStart, lineEnd } = taskInputContext.value
+      const markdown = generateTaskMarkdown(params)
+
+      // 替换触发字符和用户输入的内容
+      view.dispatch({
+        changes: {
+          from: lineStart,
+          to: lineEnd,
+          insert: markdown
+        }
+      })
+
+      hideTaskInput()
+      view.focus()
     }
 
     // 处理自动补全选择
@@ -229,8 +287,22 @@ export default {
     }
 
     // 检查是否应该自动触发补全
-    const checkAutoTrigger = () => {
-      // 禁用自动触发，只允许手动触发
+    const checkAutoTrigger = (update) => {
+      if (!view) return
+
+      // 检查是否触发了任务输入面板（- 触发）
+      const cursor = view.state.selection.main.head
+      const line = view.state.doc.lineAt(cursor)
+      const lineText = line.text
+      const cursorInLine = cursor - line.from
+
+      // 检查是否刚刚输入了 "- "（减号加空格）
+      if (lineText === '- ' && cursorInLine === 2) {
+        // 隐藏自动补全
+        hideAutoComplete()
+        // 显示任务输入面板
+        showTaskInput(line.from, line.to)
+      }
     }
 
     const createEditor = () => {
@@ -389,11 +461,13 @@ export default {
         });
       }
 
-      // 点击其他地方隐藏自动补全
+      // 点击其他地方隐藏自动补全和任务输入面板
       document.addEventListener('click', (event) => {
         if (!editorContainer.value?.contains(event.target) && 
-            !event.target.closest('.autocomplete-popup')) {
+            !event.target.closest('.autocomplete-popup') &&
+            !event.target.closest('.task-input-panel')) {
           hideAutoComplete()
+          hideTaskInput()
         }
       })
     })
@@ -417,8 +491,12 @@ export default {
       autoCompletePosition,
       autoCompleteItems,
       autoCompleteFilter,
+      taskInputVisible,
+      taskInputPosition,
       onAutoCompleteSelect,
-      hideAutoComplete
+      hideAutoComplete,
+      onTaskInputConfirm,
+      hideTaskInput
     }
   }
 }

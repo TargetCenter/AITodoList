@@ -1,12 +1,11 @@
 // 文件管理工具，处理待办组文件的保存和读取
 // 使用localStorage进行数据持久化存储
-import { ref } from 'vue'
 
 class FileManager {
   constructor() {
     // 使用localStorage存储文件数据
-    this.files = ref(new Map())
-    this.currentFile = ref(null)
+    this.files = new Map()
+    this.currentFile = null
     this.storageKey = 'todo-files'
     
     // 初始化时从localStorage加载数据
@@ -29,11 +28,11 @@ class FileManager {
           value.updatedAt = new Date(value.updatedAt)
           filesMap.set(key, value)
         })
-        this.files.value = filesMap
+        this.files = filesMap
         
         // 恢复当前文件
         if (parsedData.currentFile) {
-          this.currentFile.value = parsedData.currentFile
+          this.currentFile = parsedData.currentFile
         }
       } else {
         // 如果没有存储数据，创建默认文件
@@ -51,8 +50,8 @@ class FileManager {
   saveToStorage() {
     try {
       const dataToStore = {
-        files: Object.fromEntries(this.files.value),
-        currentFile: this.currentFile.value
+        files: Object.fromEntries(this.files),
+        currentFile: this.currentFile
       }
       localStorage.setItem(this.storageKey, JSON.stringify(dataToStore))
     } catch (error) {
@@ -98,8 +97,8 @@ class FileManager {
       updatedAt: new Date()
     }
     
-    this.files.value.set(filename, file)
-    this.currentFile.value = file
+    this.files.set(filename, file)
+    this.currentFile = file
     this.saveToStorage() // 保存到localStorage
     return file
   }
@@ -110,12 +109,12 @@ class FileManager {
    * @param {string} content - 文件内容
    */
   saveFile(filename, content) {
-    if (this.files.value.has(filename)) {
-      const file = this.files.value.get(filename)
+    if (this.files.has(filename)) {
+      const file = this.files.get(filename)
       file.content = content
       file.updatedAt = new Date()
-      this.files.value.set(filename, file)
-      this.currentFile.value = file
+      this.files.set(filename, file)
+      this.currentFile = file
     } else {
       this.createFile(filename, content)
     }
@@ -128,9 +127,9 @@ class FileManager {
    * @returns {object|null} 文件对象
    */
   readFile(filename) {
-    if (this.files.value.has(filename)) {
-      const file = this.files.value.get(filename)
-      this.currentFile.value = file
+    if (this.files.has(filename)) {
+      const file = this.files.get(filename)
+      this.currentFile = file
       this.saveToStorage() // 更新当前文件状态
       return file
     }
@@ -142,7 +141,7 @@ class FileManager {
    * @returns {Array} 文件列表
    */
   getFileList() {
-    return Array.from(this.files.value.values())
+    return Array.from(this.files.values())
   }
   
   /**
@@ -150,9 +149,9 @@ class FileManager {
    * @param {string} filename - 文件名
    */
   deleteFile(filename) {
-    this.files.value.delete(filename)
-    if (this.currentFile.value && this.currentFile.value.name === filename) {
-      this.currentFile.value = null
+    this.files.delete(filename)
+    if (this.currentFile && this.currentFile.name === filename) {
+      this.currentFile = null
     }
     this.saveToStorage() // 保存到localStorage
   }
@@ -162,7 +161,7 @@ class FileManager {
    * @returns {object|null} 当前文件对象
    */
   getCurrentFile() {
-    return this.currentFile.value
+    return this.currentFile
   }
   
   /**
@@ -170,8 +169,8 @@ class FileManager {
    * @param {string} filename - 文件名
    */
   setCurrentFile(filename) {
-    if (this.files.value.has(filename)) {
-      this.currentFile.value = this.files.value.get(filename)
+    if (this.files.has(filename)) {
+      this.currentFile = this.files.get(filename)
       this.saveToStorage() // 保存当前文件状态
     }
   }
@@ -180,8 +179,8 @@ class FileManager {
    * 清空所有数据（用于重置）
    */
   clearAll() {
-    this.files.value.clear()
-    this.currentFile.value = null
+    this.files.clear()
+    this.currentFile = null
     localStorage.removeItem(this.storageKey)
     this.createDefaultFile()
   }
@@ -192,8 +191,8 @@ class FileManager {
    */
   exportData() {
     const dataToExport = {
-      files: Object.fromEntries(this.files.value),
-      currentFile: this.currentFile.value,
+      files: Object.fromEntries(this.files),
+      currentFile: this.currentFile,
       exportTime: new Date().toISOString()
     }
     return JSON.stringify(dataToExport, null, 2)
@@ -216,8 +215,8 @@ class FileManager {
         filesMap.set(key, value)
       })
       
-      this.files.value = filesMap
-      this.currentFile.value = parsedData.currentFile
+      this.files = filesMap
+      this.currentFile = parsedData.currentFile
       this.saveToStorage()
       
       return true
