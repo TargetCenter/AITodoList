@@ -227,51 +227,68 @@ export default {
 
     // 处理键盘事件
     const handleKeyDown = (event) => {
-      if (!autoCompleteVisible.value) {
-        // 触发自动补全的条件
-        if (event.key === ' ' && event.ctrlKey) {
-          event.preventDefault()
-          triggerAutoComplete()
-          return true
-        }
-        return false
+      // 处理Ctrl+空格触发自动补全
+      if (event.key === ' ' && event.ctrlKey) {
+        event.preventDefault()
+        event.stopPropagation()
+        triggerAutoComplete()
+        return true
       }
 
       // 自动补全可见时的键盘处理
-      const autoComplete = autoCompleteRef.value
-      if (!autoComplete) return false
+      if (autoCompleteVisible.value) {
+        const autoComplete = autoCompleteRef.value
+        if (!autoComplete) return false
 
-      switch (event.key) {
-        case 'Escape':
-          event.preventDefault()
-          hideAutoComplete()
-          return true
-        
-        case 'Tab':
-          event.preventDefault()
-          autoComplete.selectCurrent() // 修改为选择当前项
-          return true
-        
-        case 'ArrowDown':
-          event.preventDefault()
-          autoComplete.selectNext()
-          return true
-        
-        case 'ArrowUp':
-          event.preventDefault()
-          autoComplete.selectPrevious()
-          return true
-        
-        case 'Enter':
-        case ' ': // 添加空格键处理
-          event.preventDefault()
-          event.stopPropagation()
-          autoComplete.selectCurrent()
-          return true
-        
-        default:
-          return false
+        switch (event.key) {
+          case 'Escape':
+            event.preventDefault()
+            event.stopPropagation()
+            hideAutoComplete()
+            view.focus()
+            return true
+          
+          case 'Tab':
+            event.preventDefault()
+            event.stopPropagation()
+            autoComplete.selectCurrent()
+            return true
+          
+          case 'ArrowDown':
+            event.preventDefault()
+            event.stopPropagation()
+            autoComplete.selectNext()
+            return true
+          
+          case 'ArrowUp':
+            event.preventDefault()
+            event.stopPropagation()
+            autoComplete.selectPrevious()
+            return true
+          
+          case 'Enter':
+            event.preventDefault()
+            event.stopPropagation()
+            autoComplete.selectCurrent()
+            return true
+          
+          case ' ':
+            event.preventDefault()
+            event.stopPropagation()
+            autoComplete.selectCurrent()
+            return true
+          
+          default:
+            return false
+        }
       }
+      
+      // 确保Tab键不会让焦点离开编辑器
+      if (event.key === 'Tab') {
+        return false // 让CodeMirror处理Tab键，插入制表符
+      }
+      
+      return false
     }
 
     // 触发自动补全

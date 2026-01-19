@@ -105,6 +105,7 @@ export default {
       switch (event.key) {
         case 'Tab':
           event.preventDefault()
+          event.stopPropagation()
           if (event.shiftKey) {
             goToPreviousStep()
           } else {
@@ -113,6 +114,7 @@ export default {
           break
         case 'Enter':
           event.preventDefault()
+          event.stopPropagation()
           if (currentStep.value === parameters.length - 1 || canFinish()) {
             onConfirm()
           } else {
@@ -121,6 +123,7 @@ export default {
           break
         case 'Escape':
           event.preventDefault()
+          event.stopPropagation()
           onCancel()
           break
       }
