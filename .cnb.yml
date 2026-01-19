@@ -12,7 +12,7 @@ $:
       services:
         - vscode
         - docker
-      env:
+      # env:
         # 配置环境变量，指定首次打开终端时自动执行的命令
         # CNB_WELCOME_CMD: zsh ./.install_claude.sh
       imports:
