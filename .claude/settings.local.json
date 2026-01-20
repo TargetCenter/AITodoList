@@ -28,7 +28,12 @@
       "Bash(code:*)",
       "Bash(wstorm:*)",
       "Bash(webstorm:*)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "mcp__zread__get_repo_structure",
+      "mcp__zread__read_file",
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
