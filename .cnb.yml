@@ -37,6 +37,8 @@ main:
     - name: 获取AI资讯并提交 # 流水线名称
       docker:
         image: cnbcool/default-dev-env:latest
+      imports:
+        - https://cnb.cool/zhenxijs/privet/-/blob/main/github.yml
       stages:
         - name: 同仓库到GitHUB
           script: bash /workspace/sync_to_github.sh
