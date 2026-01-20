@@ -232,45 +232,74 @@ export function getCommonTasks() {
 export function getAutoCompleteSuggestions(line, cursor, existingTasks = []) {
   const beforeCursor = line.substring(0, cursor)
   const afterCursor = line.substring(cursor)
-  
+
   // 如果在行首，提供任务模板
   if (beforeCursor.trim() === '' || beforeCursor.trim() === '-') {
     return getTaskTemplates()
   }
-  
-  // 如果在@符号后，提供时间格式
-  if (beforeCursor.includes('@') && !beforeCursor.includes(' ', beforeCursor.lastIndexOf('@'))) {
-    return getTimeFormats()
-  }
-  
-  // 如果在T:后，提供用时格式
-  if (beforeCursor.includes('T:') && !beforeCursor.includes(' ', beforeCursor.lastIndexOf('T:'))) {
-    return getDurationFormats()
-  }
-  
-  // 如果在->后，提供已存在的任务作为依赖
-  if (beforeCursor.includes('->')) {
-    const dependencyStart = beforeCursor.lastIndexOf('->')
-    const dependencyText = beforeCursor.substring(dependencyStart + 2).trim()
-    
-    return existingTasks
-      .filter(task => task.title.toLowerCase().includes(dependencyText.toLowerCase()))
-      .map(task => ({
+
+  // 检查当前行的结构，判断光标在哪个部分
+  const hasCheckbox = /^-\s*\[[ xX]\]/.test(beforeCursor)
+
+  // 如果有复选框
+  if (hasCheckbox) {
+    // 获取复选框后的内容
+    const afterCheckbox = beforeCursor.replace(/^-\s*\[[ xX]\]\s*/, '')
+
+    // 如果在@符号后，提供时间格式
+    if (beforeCursor.includes('@') && !beforeCursor.includes(' ', beforeCursor.lastIndexOf('@'))) {
+      return getTimeFormats()
+    }
+
+    // 如果在T:后，提供用时格式
+    if (beforeCursor.includes('T:') && !beforeCursor.includes(' ', beforeCursor.lastIndexOf('T:'))) {
+      return getDurationFormats()
+    }
+
+    // 如果在->后，提供已存在的任务作为依赖
+    if (beforeCursor.includes('->')) {
+      const dependencyStart = beforeCursor.lastIndexOf('->')
+      const dependencyText = beforeCursor.substring(dependencyStart + 2).trim()
+
+      return existingTasks
+        .filter(task => task.title.toLowerCase().includes(dependencyText.toLowerCase()))
+        .map(task => ({
+          label: task.title,
+          description: `依赖任务: ${task.title}`,
+          insertText: task.title,
+          type: 'dependency'
+        }))
+    }
+
+    // 如果还没有@，提供时间相关建议
+    if (!beforeCursor.includes('@')) {
+      return getTimeFormats()
+    }
+
+    // 如果有@但没有T:，提供用时格式
+    if (beforeCursor.includes('@') && !beforeCursor.includes('T:')) {
+      return getDurationFormats()
+    }
+
+    // 如果有@和T:但没有->，提供依赖建议
+    if (beforeCursor.includes('@') && beforeCursor.includes('T:') && !beforeCursor.includes('->')) {
+      return existingTasks.map(task => ({
         label: task.title,
         description: `依赖任务: ${task.title}`,
         insertText: task.title,
         type: 'dependency'
       }))
+    }
   }
-  
+
   // 如果输入了部分任务名称，提供常用任务建议
   if (beforeCursor.match(/^-\s*\[\s*\]\s*(.+)$/)) {
     const taskName = beforeCursor.match(/^-\s*\[\s*\]\s*(.+)$/)[1]
-    return getCommonTasks().filter(task => 
+    return getCommonTasks().filter(task =>
       task.label.toLowerCase().includes(taskName.toLowerCase())
     )
   }
-  
+
   // 默认返回任务模板
   return getTaskTemplates()
 }

@@ -80,13 +80,9 @@ export default {
     const showAutoComplete = (line, cursor, lineStart) => {
       const tasks = getCurrentTasks()
       const suggestions = getAutoCompleteSuggestions(line, cursor, tasks)
-      
-      if (suggestions.length === 0) {
-        hideAutoComplete()
-        return
-      }
 
-      autoCompleteItems.value = suggestions
+      // 总是显示补全框，即使没有建议
+      autoCompleteItems.value = suggestions.length > 0 ? suggestions : []
       autoCompleteFilter.value = ''
       autoCompleteContext.value = { line, cursor, lineStart }
       
