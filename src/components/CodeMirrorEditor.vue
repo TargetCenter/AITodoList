@@ -227,14 +227,6 @@ export default {
 
     // 处理键盘事件
     const handleKeyDown = (event) => {
-      // 处理Ctrl+空格触发自动补全
-      if (event.key === ' ' && event.ctrlKey) {
-        event.preventDefault()
-        event.stopPropagation()
-        triggerAutoComplete()
-        return true
-      }
-
       // 自动补全可见时的键盘处理
       if (autoCompleteVisible.value) {
         const autoComplete = autoCompleteRef.value
@@ -333,6 +325,20 @@ export default {
           keymap.of([
             {
               key: 'Ctrl-Space',
+              run: () => {
+                triggerAutoComplete()
+                return true
+              }
+            },
+            {
+              key: 'Cmd-Space',
+              run: () => {
+                triggerAutoComplete()
+                return true
+              }
+            },
+            {
+              key: 'Mod-Space',
               run: () => {
                 triggerAutoComplete()
                 return true
@@ -450,9 +456,16 @@ export default {
               }, 0);
             }
 
-            // 光标移动时隐藏自动补全
+            // 光标移动时隐藏自动补全（但不是由 Ctrl+Space 触发的情况）
+            // 只有当用户实际输入或大幅移动光标时才隐藏，使用方向键选择时不隐藏
             if (update.selectionSet && autoCompleteVisible.value) {
-              hideAutoComplete()
+              // 检查是否是正常的光标移动（不是用方向键选择补全项）
+              const newSelection = update.state.selection.main
+              const oldSelection = update.startState.selection.main
+              // 只有当光标位置发生明显变化且不是补全操作时才隐藏
+              if (Math.abs(newSelection.head - oldSelection.head) > 10) {
+                hideAutoComplete()
+              }
             }
           })
         ]
