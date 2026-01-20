@@ -167,22 +167,31 @@ export default {
         replaceStart = 0
         replaceEnd = line.length
       } else if (item.type === 'date' || item.type === 'time' || item.type === 'datetime') {
-        // 时间格式：替换@后的内容
+        // 时间格式：替换@后的内容，如果没有@则添加@前缀
         const atIndex = beforeCursor.lastIndexOf('@')
         if (atIndex !== -1) {
           replaceStart = atIndex + 1
+        } else {
+          // 没有@符号，在当前光标位置插入 @ + 时间（前导空格）
+          insertText = ' @' + insertText
         }
       } else if (item.type === 'duration') {
-        // 用时格式：替换T:后的内容
+        // 用时格式：替换T:后的内容，如果没有T:则添加T:前缀
         const tIndex = beforeCursor.lastIndexOf('T:')
         if (tIndex !== -1) {
           replaceStart = tIndex + 2
+        } else {
+          // 没有T:符号，在当前光标位置插入 T: + 用时（前导空格）
+          insertText = ' T:' + insertText
         }
       } else if (item.type === 'dependency') {
-        // 依赖：替换->后的内容
+        // 依赖：替换->后的内容，如果没有->则添加->前缀
         const arrowIndex = beforeCursor.lastIndexOf('->')
         if (arrowIndex !== -1) {
           replaceStart = arrowIndex + 2
+        } else {
+          // 没有->符号，在当前光标位置插入 -> + 依赖（前导空格）
+          insertText = ' ->' + insertText
         }
       }
 
