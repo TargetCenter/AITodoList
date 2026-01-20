@@ -182,3 +182,23 @@ module.exports = {
 - **大小**：节点大小与任务用时成正比
 - **连线**：箭头表示依赖关系，从依赖任务指向被依赖任务
 - **交互**：鼠标悬停可查看任务详细信息，拖拽可调整布局
+
+## 存储集成计划
+
+本项目计划支持多种存储后端，以提供更灵活的数据管理方案。详细的集成计划请参考 [Storage Integration Plan](docs/STORAGE_INTEGRATION_PLAN.md)。
+
+### 支持的存储后端
+
+1. **Supabase** - 云端数据库，支持实时同步和用户认证
+2. **Neo4j** - 图数据库，适合处理复杂的任务依赖关系
+3. **GitHub Issues** - 集成 GitHub 问题跟踪，便于协作
+4. **Cloud Storage (S3/GCS/Azure)** - 云端文件存储，支持版本控制
+
+### 当前状态
+
+- ✅ Supabase 包已安装，待配置
+- ⏳ 其他存储后端待实现
+
+### 实施进度
+
+详细的实施时间表和任务清单请查看 [Storage Integration Plan](docs/STORAGE_INTEGRATION_PLAN.md)。
