@@ -57,31 +57,6 @@
                     <button @click="viewGraph" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
                         查看关系图
                     </button>
-                    <div class="relative">
-                        <button @click="toggleThemeDropdown"
-                                class="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center gap-2">
-                            主题
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div v-if="showThemeDropdown"
-                             class="absolute right-0 mt-2 w-36 bg-white rounded-md shadow-lg z-10">
-                            <button @click="handleThemeCommand('vs')"
-                                    class="block w-full text-left px-4 py-2 hover:bg-gray-100">浅色主题
-                            </button>
-                            <button @click="handleThemeCommand('vs-dark')"
-                                    class="block w-full text-left px-4 py-2 hover:bg-gray-100">深色主题
-                            </button>
-                            <button @click="handleThemeCommand('todo-light')"
-                                    class="block w-full text-left px-4 py-2 hover:bg-gray-100">Todo浅色
-                            </button>
-                            <button @click="handleThemeCommand('todo-dark')"
-                                    class="block w-full text-left px-4 py-2 hover:bg-gray-100">Todo深色
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </header>
 
@@ -93,10 +68,8 @@
                                 <h3 class="text-lg font-semibold mb-4">Markdown 编辑器</h3>
                                 <code-mirror-editor
                                     v-model="markdownContent"
-                                    :theme="currentTheme"
                                     @update:modelValue="onContentChange"
                                     @scroll="onEditorScroll"
-                                    :options="editorOptions"
                                     class="h-96"
                                 />
                                 <div v-if="syntaxErrors.length > 0" class="errors mt-5">
@@ -369,26 +342,8 @@ export default {
         const tasks = ref([])
         const syntaxErrors = ref([])
 
-        // 当前主题
-        const currentTheme = ref('vs')
-
         // 下拉菜单状态
         const showFileDropdown = ref(false)
-        const showThemeDropdown = ref(false)
-
-        // Monaco编辑器选项
-        const editorOptions = ref({
-            fontSize: 14,
-            fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-            lineNumbers: 'on',
-            minimap: {enabled: true},
-            wordWrap: 'on',
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            renderWhitespace: 'selection',
-            cursorBlinking: 'blink',
-            smoothScrolling: true
-        })
 
         // 文件管理相关
         const newFileDialogVisible = ref(false)
@@ -493,15 +448,20 @@ export default {
                 // 将当前的Markdown内容分割成行
                 const lines = markdownContent.value.split('\n')
 
+                // 与markdownParser.js相同的正则表达式
+                const taskRegex1 = /^-\s*\[([ xX])\]\s*(.+?)\s+@(\S+?)\s+T:(\S+?)(?:\s*->\s*(.+))?$/
+                const taskRegex2 = /^-\s*\[([ xX])\]\s*(.+?)\s+(\S+?)\s+(\S+?)(?:\s*->\s*(.+))?$/
+
                 // 查找并更新对应的任务行
                 const updatedLines = lines.map(line => {
-                    // 使用与markdownParser.js中相同的正则表达式来匹配任务
-                    const taskRegex = /^-\s*\[([ xX])\]\s*(.+?)(?:\s+@(.*?))?(?:\s+(.*?))?(?:\s*->(.*?))?$/
-                    const match = line.match(taskRegex)
+                    let match = line.match(taskRegex1)
+                    if (!match) {
+                        match = line.match(taskRegex2)
+                    }
 
                     if (match) {
                         const [, checked, title] = match
-                        // 检查标题是否匹配（去除可能的时间和其他信息后）
+                        // 检查标题是否匹配
                         if (title.trim() === changedTask.title.trim()) {
                             // 根据任务状态更新复选框
                             const newCheckbox = changedTask.completed ? 'x' : ' '
@@ -681,18 +641,6 @@ export default {
         // 下拉菜单切换
         const toggleFileDropdown = () => {
             showFileDropdown.value = !showFileDropdown.value
-            showThemeDropdown.value = false
-        }
-
-        const toggleThemeDropdown = () => {
-            showThemeDropdown.value = !showThemeDropdown.value
-            showFileDropdown.value = false
-        }
-
-        // 主题切换处理
-        const handleThemeCommand = (theme) => {
-            currentTheme.value = theme
-            showThemeDropdown.value = false
         }
 
         const createNewFile = () => {
@@ -804,12 +752,8 @@ export default {
             filteredTasks,
             incompleteTasks,
             completedTasks,
-            editorOptions,
-            currentTheme,
             showFileDropdown,
-            showThemeDropdown,
             toggleFileDropdown,
-            toggleThemeDropdown,
             onContentChange,
             onEditorScroll,
             onPreviewScroll,
@@ -817,7 +761,6 @@ export default {
             checkSyntax,
             viewGraph,
             handleFileCommand,
-            handleThemeCommand,
             createNewFile,
             openSelectedFile,
             importDataConfirm

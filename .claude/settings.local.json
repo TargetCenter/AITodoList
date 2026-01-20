@@ -27,7 +27,8 @@
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(code:*)",
       "Bash(wstorm:*)",
-      "Bash(webstorm:*)"
+      "Bash(webstorm:*)",
+      "Bash(npm i:*)"
     ],
     "deny": [],
     "ask": []

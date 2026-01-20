@@ -10,19 +10,6 @@ import {parseMarkdown, validateSyntax} from "@/utils/markdownParser";
 const todos = ref([])
 const mdTodoList = ref('')
 
-const editorOptions = ref({
-    fontSize: 14,
-    fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-    lineNumbers: 'on',
-    minimap: {enabled: true},
-    wordWrap: 'on',
-    automaticLayout: true,
-    scrollBeyondLastLine: false,
-    renderWhitespace: 'selection',
-    cursorBlinking: 'blink',
-    smoothScrolling: true
-})
-
 const onContentChange = () => {
     try {
         const tasks = parseMarkdown(mdTodoList.value)
@@ -54,7 +41,6 @@ onMounted(() => {
                         v-model="mdTodoList"
                         @update:modelValue="onContentChange"
                         @scroll="onEditorScroll"
-                        :options="editorOptions"
                         class="w-full"
                     />
                 </div>
