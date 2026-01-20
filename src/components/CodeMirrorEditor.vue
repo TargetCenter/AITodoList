@@ -154,8 +154,8 @@ export default {
       const { line, cursor, lineStart } = autoCompleteContext.value
       const beforeCursor = line.substring(0, cursor)
 
-      // 处理模板插入
-      const { text: insertText, placeholders } = processTemplate(item.insertText)
+      // 处理模板插入（使用 let 以便后续修改）
+      let { text: insertText, placeholders } = processTemplate(item.insertText)
       
       // 确定替换范围
       let replaceStart = cursor
