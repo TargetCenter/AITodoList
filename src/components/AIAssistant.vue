@@ -154,15 +154,15 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">主任务</label>
                                         <input
-                                            v-model="breakdownForm.mainTask"
+                                            v-model="breakdownTaskText"
                                             type="text"
                                             placeholder="请输入要分解的主任务"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                     <button
-                                        @click="breakdownTask"
-                                        :disabled="isGenerating || !breakdownForm.mainTask"
+                                        @click="breakdownLargeTask"
+                                        :disabled="isGenerating || !breakdownTaskText"
                                         class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                                     >
                                         分解任务
@@ -302,7 +302,7 @@ export default {
             deadline: ''
         })
 
-        const breakdownTask = ref('')
+        const breakdownTaskText = ref('')
 
         // 计算属性
         const hasContent = computed(() => {
@@ -363,9 +363,14 @@ export default {
         }
 
         const breakdownLargeTask = async () => {
+            if (!breakdownTaskText.value || breakdownTaskText.value.trim().length === 0) {
+                alert('请输入要分解的任务')
+                return
+            }
+
             isGenerating.value = true
             try {
-                const result = await pollinationsAPI.breakdownTask(breakdownTask.value)
+                const result = await pollinationsAPI.breakdownTask(breakdownTaskText.value)
                 generatedContent.value = result
                 alert('任务分解完成')
             } catch (error) {
@@ -437,6 +442,9 @@ export default {
             streamingContent.value = ''
         }
 
+        // 添加方法别名以保持向后兼容
+        const generateTodos = generateTodoList
+
         return {
             // 响应式数据
             showDialog,
@@ -447,7 +455,7 @@ export default {
             streamingContent,
             generateForm,
             projectForm,
-            breakdownTask,
+            breakdownTaskText,
 
             // 计算属性
             hasContent,
@@ -456,6 +464,7 @@ export default {
             handleTabClick,
             handleClose,
             optimizeCurrentContent,
+            generateTodos,
             generateTodoList,
             breakdownLargeTask,
             generateProjectPlan,

@@ -18,7 +18,14 @@
    - 箭头表示任务依赖方向
    - 不同颜色区分已完成和未完成任务
 
-4. **文件管理**：
+4. **AI 智能助手**：
+   - 优化待办内容 - 自动改进任务描述和时间估算
+   - 生成待办清单 - 根据主题自动生成任务列表
+   - 任务分解 - 将大任务拆解为可执行的子任务
+   - 项目规划 - 生成完整的项目计划和里程碑
+   - 智能建议 - 分析任务并提供改进建议
+
+5. **文件管理**：
    - 支持多个待办组文件
    - 新建、保存、打开文件功能
 
@@ -54,13 +61,20 @@
 ```
 src/
 ├── components/     # 可复用组件
+│   ├── AIAssistant.vue    # AI 智能助手组件
+│   └── MonacoEditor.vue   # Monaco 编辑器组件
 ├── views/          # 页面视图
 │   ├── TodoEditor.vue  # 待办编辑器
 │   └── TodoGraph.vue   # 关系图展示
 ├── router/         # 路由配置
 ├── utils/          # 工具函数
-│   ├── markdownParser.js  # Markdown解析器
-│   └── fileManager.js     # 文件管理器
+│   ├── pollinationsAPI.js  # Pollinations.ai API 客户端
+│   ├── markdownParser.js   # Markdown解析器
+│   ├── fileManager.js      # 文件管理器
+│   ├── todoLanguage.js     # Monaco 语言定义
+│   ├── todoCompletion.js   # 自动补全
+│   ├── todoHover.js        # 悬停提示
+│   └── todoValidation.js   # 实时验证
 └── assets/         # 静态资源
 ```
 
@@ -102,6 +116,7 @@ npm run serve
 - [ECharts](https://echarts.apache.org/)
 - [Tailwind CSS 3](https://tailwindcss.com/)
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/)
+- [Pollinations.ai](https://pollinations.ai/) - AI 服务提供商
 
 ## 使用说明
 
@@ -111,6 +126,40 @@ npm run serve
 4. **保存文件**：点击"文件管理" -> "保存文件"保存当前待办组
 5. **打开文件**：点击"文件管理" -> "打开文件"选择已有待办组
 6. **查看关系图**：点击"查看关系图"按钮查看任务依赖关系可视化展示
+7. **AI 助手**：点击右下角 AI 按钮，使用智能功能优化和管理待办任务
+
+## AI 助手配置
+
+### 获取 API Key
+
+访问 https://enter.pollinations.ai 注册账号并获取 API Key
+
+### 配置方式
+
+**方式一：环境变量（推荐）**
+
+```bash
+# 创建 .env.local 文件
+echo "VITE_POLLINATIONS_API_KEY=sk_你的key" > .env.local
+```
+
+**方式二：本地存储**
+
+1. 打开浏览器开发者工具 (F12)
+2. 在 Console 中执行：
+```javascript
+localStorage.setItem('pollinations_api_key', 'sk_你的key')
+```
+
+### AI 功能说明
+
+- **优化内容** - AI 自动改进任务描述、调整时间估算
+- **生成待办** - 输入主题，自动生成完整的待办清单
+- **任务分解** - 将大任务分解为 3-8 个可执行的子任务
+- **项目规划** - 根据项目名称和描述，生成完整的项目计划
+- **智能建议** - 分析当前待办事项，提供优化建议
+
+详细使用文档请参考 [POLLINATIONS_API_USAGE.md](POLLINATIONS_API_USAGE.md)
 
 ## 开发注意事项
 

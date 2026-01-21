@@ -1,107 +1,592 @@
-// Pollinations.ai LLM API 集成模块
-// 提供文本生成、待办事项优化等AI功能
+/**
+ * Pollinations.ai API 客户端
+ * 完整实现官方 OpenAPI 规范，包含数据校验和异常处理
+ *
+ * 官方文档: https://gen.pollinations.ai
+ * API Key 获取: https://enter.pollinations.ai
+ */
+
+// ============================================================================
+// 数据校验工具
+// ============================================================================
+
+class ValidationError extends Error {
+  constructor(field, message, value) {
+    super(`Validation failed for '${field}': ${message}`)
+    this.name = 'ValidationError'
+    this.field = field
+    this.value = value
+  }
+}
+
+class APIError extends Error {
+  constructor(code, message, details = null) {
+    super(message)
+    this.name = 'APIError'
+    this.code = code
+    this.details = details
+  }
+}
+
+const Validator = {
+  // 验证 API Key 格式
+  validateAPIKey(key) {
+    if (!key || typeof key !== 'string') {
+      throw new ValidationError('apiKey', 'API key is required and must be a string')
+    }
+    // pk_ (publishable) 或 sk_ (secret) 开头，或者临时 key
+    if (!key.match(/^(pk_|sk_|temp_)/)) {
+      console.warn('Warning: API key format may be invalid')
+    }
+    return true
+  },
+
+  // 验证模型名称
+  validateTextModel(model) {
+    const validModels = [
+      'openai', 'openai-fast', 'openai-large',
+      'qwen-coder', 'mistral', 'openai-audio',
+      'gemini', 'gemini-fast', 'gemini-large',
+      'deepseek', 'grok', 'gemini-search',
+      'chickytutor', 'midijourney',
+      'claude-fast', 'claude', 'claude-large',
+      'perplexity-fast', 'perplexity-reasoning',
+      'kimi', 'nova-fast', 'glm', 'minimax', 'nomnom'
+    ]
+    if (model && !validModels.includes(model)) {
+      throw new ValidationError('model', `Invalid text model. Must be one of: ${validModels.join(', ')}`, model)
+    }
+    return true
+  },
+
+  validateImageModel(model) {
+    const validModels = [
+      'flux', 'zimage', 'turbo', 'gptimage', 'gptimage-large',
+      'kontext', 'seedream', 'seedream-pro',
+      'nanobanana', 'nanobanana-pro',
+      'veo', 'seedance', 'seedance-pro',
+      'wan', 'klein'
+    ]
+    if (model && !validModels.includes(model)) {
+      throw new ValidationError('model', `Invalid image model. Must be one of: ${validModels.join(', ')}`, model)
+    }
+    return true
+  },
+
+  // 验证消息格式
+  validateMessages(messages) {
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new ValidationError('messages', 'Messages must be a non-empty array')
+    }
+
+    const validRoles = ['system', 'developer', 'user', 'assistant', 'tool', 'function']
+
+    messages.forEach((msg, index) => {
+      if (!msg.role || typeof msg.role !== 'string') {
+        throw new ValidationError(`messages[${index}].role`, 'Role is required and must be a string')
+      }
+      if (!validRoles.includes(msg.role)) {
+        throw new ValidationError(`messages[${index}].role`, `Invalid role. Must be one of: ${validRoles.join(', ')}`)
+      }
+      if (!msg.content && msg.role !== 'assistant') {
+        throw new ValidationError(`messages[${index}].content`, 'Content is required')
+      }
+    })
+
+    return true
+  },
+
+  // 验证温度参数
+  validateTemperature(temp) {
+    if (temp !== undefined && (typeof temp !== 'number' || temp < 0 || temp > 2)) {
+      throw new ValidationError('temperature', 'Temperature must be a number between 0 and 2', temp)
+    }
+    return true
+  },
+
+  // 验证 max_tokens
+  validateMaxTokens(tokens) {
+    if (tokens !== undefined && (typeof tokens !== 'number' || tokens < 0)) {
+      throw new ValidationError('max_tokens', 'max_tokens must be a positive number', tokens)
+    }
+    return true
+  },
+
+  // 验证图片尺寸
+  validateDimension(value, name) {
+    if (value !== undefined && (typeof value !== 'number' || value <= 0 || value > 8192)) {
+      throw new ValidationError(name, `${name} must be a positive number (max 8192)`, value)
+    }
+    return true
+  },
+
+  // 验证 seed
+  validateSeed(seed) {
+    if (seed !== undefined && (typeof seed !== 'number' || seed < -1)) {
+      throw new ValidationError('seed', 'Seed must be a number >= -1', seed)
+    }
+    return true
+  },
+
+  // 验证 prompt
+  validatePrompt(prompt) {
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      throw new ValidationError('prompt', 'Prompt is required and must be a non-empty string')
+    }
+    return true
+  }
+}
+
+// ============================================================================
+// Pollinations API 客户端
+// ============================================================================
 
 class PollinationsAPI {
-  constructor() {
-    this.baseURL = 'https://text.pollinations.ai'
-    this.defaultModel = 'openai'
-    this.defaultOptions = {
-      temperature: 0.7,
-      max_tokens: 1000,
-      stream: false
-    }
+  constructor(config = {}) {
+    this.baseURL = config.baseURL || 'https://gen.pollinations.ai'
+    this.apiKey = config.apiKey || null
+    this.defaultModel = config.defaultModel || 'openai'
+    this.timeout = config.timeout || 60000 // 60秒默认超时
   }
 
+  // 设置 API Key
+  setAPIKey(key) {
+    Validator.validateAPIKey(key)
+    this.apiKey = key
+  }
+
+  // 获取请求头
+  getHeaders(contentType = 'application/json') {
+    const headers = {
+      'Accept': contentType === 'application/json' ? 'application/json' : '*/*'
+    }
+
+    if (contentType === 'application/json') {
+      headers['Content-Type'] = 'application/json'
+    }
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`
+    }
+
+    return headers
+  }
+
+  // 处理响应错误
+  async handleResponse(response) {
+    const contentType = response.headers.get('content-type')
+    const isJSON = contentType && contentType.includes('application/json')
+
+    if (response.ok) {
+      return isJSON ? await response.json() : await response.text()
+    }
+
+    // 解析错误响应
+    let errorData
+    if (isJSON) {
+      errorData = await response.json()
+    } else {
+      errorData = { message: await response.text() }
+    }
+
+    // 根据状态码抛出相应的错误
+    const errorMap = {
+      400: 'BAD_REQUEST',
+      401: 'UNAUTHORIZED',
+      402: 'PAYMENT_REQUIRED',
+      403: 'FORBIDDEN',
+      404: 'NOT_FOUND',
+      429: 'RATE_LIMIT_EXCEEDED',
+      500: 'INTERNAL_ERROR',
+      503: 'SERVICE_UNAVAILABLE'
+    }
+
+    const code = errorMap[response.status] || 'UNKNOWN_ERROR'
+    const message = errorData.error?.message || errorData.message || `HTTP ${response.status}`
+
+    throw new APIError(code, message, errorData.error?.details)
+  }
+
+  // 构建查询字符串
+  buildQueryString(params) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value))
+      }
+    })
+    return searchParams.toString()
+  }
+
+  // ========================================================================
+  // 文本生成 API
+  // ========================================================================
+
   /**
-   * 发送请求到 Pollinations.ai API
-   * @param {string} prompt - 用户输入的提示词
+   * 简单文本生成 (GET /text/{prompt})
+   * @param {string} prompt - 提示词
    * @param {Object} options - 可选参数
-   * @returns {Promise<string>} AI 生成的响应
+   * @returns {Promise<string>} 生成的文本
    */
   async generateText(prompt, options = {}) {
     try {
-      const config = {
-        ...this.defaultOptions,
-        ...options
-      }
+      Validator.validatePrompt(prompt)
 
-      // 如果是流式响应
-      if (config.stream) {
-        return this.generateStreamText(prompt, config)
-      }
+      const {
+        model = this.defaultModel,
+        seed = 0,
+        system,
+        json: returnJSON = false,
+        temperature,
+        stream = false
+      } = options
 
-      // Pollinations.ai 使用 GET 请求，将 prompt 作为 URL 参数
-      const url = new URL(this.baseURL)
-      
-      // 构建请求 URL，将 prompt 作为路径参数
-      const requestUrl = `${this.baseURL}/${encodeURIComponent(prompt)}`
-      
-      const response = await fetch(requestUrl, {
+      Validator.validateTextModel(model)
+      if (temperature !== undefined) Validator.validateTemperature(temperature)
+      Validator.validateSeed(seed)
+
+      const params = { model, seed }
+      if (system) params.system = system
+      if (returnJSON) params.json = true
+      if (temperature !== undefined) params.temperature = temperature
+      if (stream) params.stream = false // 简单端点不支持流式
+
+      const queryString = this.buildQueryString(params)
+      const url = `${this.baseURL}/text/${encodeURIComponent(prompt)}${queryString ? '?' + queryString : ''}`
+
+      const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Accept': 'text/plain',
+        headers: this.getHeaders('text/plain')
+      })
+
+      const result = await this.handleResponse(response)
+
+      // 如果是 JSON 模式，解析返回的 JSON
+      if (returnJSON && typeof result === 'string') {
+        try {
+          return JSON.parse(result)
+        } catch (e) {
+          return result
         }
+      }
+
+      return result
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof APIError) {
+        throw error
+      }
+      throw new APIError('NETWORK_ERROR', `Failed to generate text: ${error.message}`)
+    }
+  }
+
+  /**
+   * 聊天完成 (POST /v1/chat/completions)
+   * OpenAI 兼容接口
+   * @param {Object} params - 请求参数
+   * @returns {Promise<Object>} 聊天响应
+   */
+  async chatCompletions(params = {}) {
+    try {
+      const {
+        messages,
+        model = this.defaultModel,
+        temperature,
+        max_tokens,
+        top_p,
+        frequency_penalty,
+        presence_penalty,
+        stream = false,
+        stop,
+        seed,
+        response_format,
+        tools,
+        tool_choice
+      } = params
+
+      // 数据验证
+      Validator.validateMessages(messages)
+      Validator.validateTextModel(model)
+      if (temperature !== undefined) Validator.validateTemperature(temperature)
+      if (max_tokens !== undefined) Validator.validateMaxTokens(max_tokens)
+      if (seed !== undefined) Validator.validateSeed(seed)
+
+      // 构建请求体
+      const requestBody = {
+        messages,
+        model,
+        stream
+      }
+
+      if (temperature !== undefined) requestBody.temperature = temperature
+      if (max_tokens !== undefined) requestBody.max_tokens = max_tokens
+      if (top_p !== undefined) requestBody.top_p = top_p
+      if (frequency_penalty !== undefined) requestBody.frequency_penalty = frequency_penalty
+      if (presence_penalty !== undefined) requestBody.presence_penalty = presence_penalty
+      if (stop !== undefined) requestBody.stop = stop
+      if (seed !== undefined) requestBody.seed = seed
+      if (response_format !== undefined) requestBody.response_format = response_format
+      if (tools !== undefined) requestBody.tools = tools
+      if (tool_choice !== undefined) requestBody.tool_choice = tool_choice
+
+      const response = await fetch(`${this.baseURL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(requestBody)
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof APIError) {
+        throw error
+      }
+      throw new APIError('NETWORK_ERROR', `Chat completion failed: ${error.message}`)
+    }
+  }
+
+  /**
+   * 流式聊天完成
+   * @param {Object} params - 请求参数
+   * @param {Function} onChunk - 接收数据块的回调
+   * @returns {Promise<AsyncGenerator>} 异步生成器
+   */
+  async *chatCompletionsStream(params = {}, onChunk = null) {
+    try {
+      const { messages, model = this.defaultModel, temperature, max_tokens } = params
+
+      Validator.validateMessages(messages)
+      Validator.validateTextModel(model)
+      if (temperature !== undefined) Validator.validateTemperature(temperature)
+      if (max_tokens !== undefined) Validator.validateMaxTokens(max_tokens)
+
+      const requestBody = {
+        ...params,
+        messages,
+        model,
+        stream: true
+      }
+
+      const response = await fetch(`${this.baseURL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
-        throw new Error(`API请求失败: ${response.status} ${response.statusText}`)
+        await this.handleResponse(response)
       }
 
-      const text = await response.text()
-      return text || '生成失败'
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() // 保留不完整的行
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || trimmed === 'data: [DONE]') continue
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(trimmed.slice(6))
+              const content = data.choices?.[0]?.delta?.content
+              if (content) {
+                yield content
+                if (onChunk) onChunk(content)
+              }
+            } catch (e) {
+              // 忽略解析错误
+            }
+          }
+        }
+      }
     } catch (error) {
-      console.error('Pollinations API 错误:', error)
-      throw new Error(`AI生成失败: ${error.message}`)
+      if (error instanceof ValidationError || error instanceof APIError) {
+        throw error
+      }
+      throw new APIError('NETWORK_ERROR', `Stream chat failed: ${error.message}`)
     }
   }
 
+  // ========================================================================
+  // 图片/视频生成 API
+  // ========================================================================
+
   /**
-   * 流式文本生成（Pollinations.ai 暂不支持流式，使用模拟流式）
+   * 生成图片或视频 (GET /image/{prompt})
    * @param {string} prompt - 提示词
-   * @param {Object} config - 配置选项
-   * @returns {Promise<AsyncGenerator>} 流式响应生成器
+   * @param {Object} options - 可选参数
+   * @returns {Promise<string>} 图片/视频 URL
    */
-  async generateStreamText(prompt, config) {
+  async generateImage(prompt, options = {}) {
     try {
-      // 先获取完整响应
-      const fullResponse = await this.generateText(prompt, { ...config, stream: false })
-      
-      // 模拟流式输出
-      return this.simulateStreamResponse(fullResponse)
+      Validator.validatePrompt(prompt)
 
+      const {
+        model = 'flux',
+        width = 1024,
+        height = 1024,
+        seed = 0,
+        nologo = false,
+        private = false,
+        enhance = false,
+        nofeed = false
+      } = options
+
+      Validator.validateImageModel(model)
+      Validator.validateDimension(width, 'width')
+      Validator.validateDimension(height, 'height')
+      Validator.validateSeed(seed)
+
+      const params = { model, width, height, seed }
+      if (nologo) params.nologo = true
+      if (private) params.private = true
+      if (enhance) params.enhance = true
+      if (nofeed) params.nofeed = true
+
+      const queryString = this.buildQueryString(params)
+      const url = `${this.baseURL}/image/${encodeURIComponent(prompt)}${queryString ? '?' + queryString : ''}`
+
+      // 直接返回 URL，让浏览器加载
+      return url
     } catch (error) {
-      console.error('流式生成错误:', error)
-      throw error
+      if (error instanceof ValidationError || error instanceof APIError) {
+        throw error
+      }
+      throw new APIError('NETWORK_ERROR', `Image generation failed: ${error.message}`)
+    }
+  }
+
+  // ========================================================================
+  // 模型列表 API
+  // ========================================================================
+
+  /**
+   * 获取可用的文本模型列表 (GET /v1/models)
+   * OpenAI 兼容格式
+   */
+  async getTextModels() {
+    try {
+      const response = await fetch(`${this.baseURL}/v1/models`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      throw new APIError('NETWORK_ERROR', `Failed to get text models: ${error.message}`)
     }
   }
 
   /**
-   * 模拟流式响应
-   * @param {string} fullText - 完整文本
-   * @returns {AsyncGenerator} 异步生成器
+   * 获取文本模型详细信息 (GET /text/models)
    */
-  async* simulateStreamResponse(fullText) {
-    const words = fullText.split('')
-    const chunkSize = Math.max(1, Math.floor(words.length / 50)) // 分成大约50个块
-    
-    for (let i = 0; i < words.length; i += chunkSize) {
-      const chunk = words.slice(i, i + chunkSize).join('')
-      yield chunk
-      
-      // 添加小延迟以模拟流式效果
-      await new Promise(resolve => setTimeout(resolve, 50))
+  async getTextModelsDetailed() {
+    try {
+      const response = await fetch(`${this.baseURL}/text/models`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      throw new APIError('NETWORK_ERROR', `Failed to get detailed text models: ${error.message}`)
     }
   }
+
+  /**
+   * 获取图片模型列表 (GET /image/models)
+   */
+  async getImageModels() {
+    try {
+      const response = await fetch(`${this.baseURL}/image/models`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      throw new APIError('NETWORK_ERROR', `Failed to get image models: ${error.message}`)
+    }
+  }
+
+  // ========================================================================
+  // 账户管理 API
+  // ========================================================================
+
+  /**
+   * 获取用户资料 (GET /account/profile)
+   */
+  async getAccountProfile() {
+    try {
+      const response = await fetch(`${this.baseURL}/account/profile`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      throw new APIError('NETWORK_ERROR', `Failed to get account profile: ${error.message}`)
+    }
+  }
+
+  /**
+   * 获取 pollen 余额 (GET /account/balance)
+   */
+  async getAccountBalance() {
+    try {
+      const response = await fetch(`${this.baseURL}/account/balance`, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      throw new APIError('NETWORK_ERROR', `Failed to get account balance: ${error.message}`)
+    }
+  }
+
+  /**
+   * 获取使用历史 (GET /account/usage)
+   * @param {Object} options - 查询选项
+   */
+  async getAccountUsage(options = {}) {
+    try {
+      const { format = 'json' } = options
+      const params = { format }
+
+      const queryString = this.buildQueryString(params)
+      const url = `${this.baseURL}/account/usage${queryString ? '?' + queryString : ''}`
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders()
+      })
+
+      return await this.handleResponse(response)
+    } catch (error) {
+      throw new APIError('NETWORK_ERROR', `Failed to get account usage: ${error.message}`)
+    }
+  }
+
+  // ========================================================================
+  // 待办事项相关的 AI 功能
+  // ========================================================================
 
   /**
    * 优化待办事项内容
-   * @param {string} todoContent - 原始待办事项内容
-   * @returns {Promise<string>} 优化后的内容
    */
   async optimizeTodoContent(todoContent) {
-    const prompt = `
-请帮我优化以下待办事项内容，使其更加清晰、具体和可执行。请保持原有的格式（包括复选框、日期、时间估算等），但改进描述的准确性和可操作性：
+    try {
+      if (!todoContent || todoContent.trim().length === 0) {
+        throw new ValidationError('todoContent', 'Todo content is required')
+      }
+
+      const prompt = `请帮我优化以下待办事项内容，使其更加清晰、具体和可执行。请保持原有的格式（包括复选框、日期、时间估算等），但改进描述的准确性和可操作性：
 
 原始内容：
 ${todoContent}
@@ -112,30 +597,32 @@ ${todoContent}
 3. 合理安排任务优先级和依赖关系
 4. 如果时间估算不合理，请调整
 5. 添加必要的标签和分类
-`
 
-    return await this.generateText(prompt, {
-      temperature: 0.5,
-      max_tokens: 1500
-    })
+只返回优化后的内容，不要有其他说明文字。`
+
+      return await this.generateText(prompt, {
+        temperature: 0.5
+      })
+    } catch (error) {
+      throw new APIError('OPTIMIZATION_FAILED', `Failed to optimize todo: ${error.message}`)
+    }
   }
 
   /**
    * 根据主题生成待办事项
-   * @param {string} topic - 主题或项目名称
-   * @param {Object} options - 生成选项
-   * @returns {Promise<string>} 生成的待办事项
    */
   async generateTodoByTopic(topic, options = {}) {
-    const {
-      timeframe = '一周',
-      priority = '中等',
-      includeSubtasks = true,
-      estimateTime = true
-    } = options
+    try {
+      Validator.validatePrompt(topic)
 
-    const prompt = `
-请为"${topic}"这个主题生成一个详细的待办事项清单，要求：
+      const {
+        timeframe = '一周',
+        priority = '中等',
+        includeSubtasks = true,
+        estimateTime = true
+      } = options
+
+      const prompt = `请为"${topic}"这个主题生成一个详细的待办事项清单，要求：
 
 1. 时间范围：${timeframe}
 2. 优先级：${priority}
@@ -151,22 +638,27 @@ ${todoContent}
 - 合理安排优先级
 - 包含适当的分类和标签
 - 考虑任务之间的依赖关系
-`
 
-    return await this.generateText(prompt, {
-      temperature: 0.6,
-      max_tokens: 2000
-    })
+只返回生成的待办事项内容，不要有其他说明。`
+
+      return await this.generateText(prompt, {
+        temperature: 0.6
+      })
+    } catch (error) {
+      throw new APIError('GENERATION_FAILED', `Failed to generate todos: ${error.message}`)
+    }
   }
 
   /**
-   * 智能任务分解
-   * @param {string} task - 需要分解的大任务
-   * @returns {Promise<string>} 分解后的子任务列表
+   * 任务分解
    */
   async breakdownTask(task) {
-    const prompt = `
-请将以下大任务分解为具体的可执行子任务：
+    try {
+      if (!task || task.trim().length === 0) {
+        throw new ValidationError('task', 'Task description is required')
+      }
+
+      const prompt = `请将以下大任务分解为具体的可执行子任务：
 
 任务：${task}
 
@@ -179,30 +671,40 @@ ${todoContent}
 6. 使用Markdown复选框格式
 
 格式示例：
-- [ ] 子任务1 @日期 T:时间 
+- [ ] 子任务1 @日期 T:时间
 - [ ] 子任务2 @日期 T:时间 -> 子任务1
-`
 
-    return await this.generateText(prompt, {
-      temperature: 0.4,
-      max_tokens: 1000
-    })
+只返回分解后的子任务列表，不要有其他说明。`
+
+      return await this.generateText(prompt, {
+        temperature: 0.4
+      })
+    } catch (error) {
+      throw new APIError('BREAKDOWN_FAILED', `Failed to breakdown task: ${error.message}`)
+    }
   }
 
   /**
    * 生成项目计划
-   * @param {string} projectName - 项目名称
-   * @param {string} description - 项目描述
-   * @param {string} deadline - 截止日期
-   * @returns {Promise<string>} 完整的项目计划
    */
-  async generateProjectPlan(projectName, description, deadline) {
-    const prompt = `
-请为以下项目生成一个完整的待办事项计划：
+  async generateProjectPlan(projectName, description = '', deadline = '') {
+    try {
+      if (!projectName || projectName.trim().length === 0) {
+        throw new ValidationError('projectName', 'Project name is required')
+      }
 
-项目名称：${projectName}
-项目描述：${description}
-截止日期：${deadline}
+      let prompt = `请为以下项目生成一个完整的待办事项计划：
+
+项目名称：${projectName}`
+
+      if (description) {
+        prompt += `\n项目描述：${description}`
+      }
+      if (deadline) {
+        prompt += `\n截止日期：${deadline}`
+      }
+
+      prompt += `
 
 请生成包含以下部分的完整计划：
 1. 项目概述
@@ -218,22 +720,27 @@ ${todoContent}
 - 时间估算
 - 任务依赖关系
 - 优先级标记
-`
 
-    return await this.generateText(prompt, {
-      temperature: 0.5,
-      max_tokens: 3000
-    })
+只返回生成的项目计划，不要有其他说明。`
+
+      return await this.generateText(prompt, {
+        temperature: 0.5
+      })
+    } catch (error) {
+      throw new APIError('PROJECT_PLAN_FAILED', `Failed to generate project plan: ${error.message}`)
+    }
   }
 
   /**
    * 智能提醒和建议
-   * @param {string} todoContent - 当前待办事项内容
-   * @returns {Promise<string>} AI建议
    */
   async getSuggestions(todoContent) {
-    const prompt = `
-请分析以下待办事项内容，并提供改进建议：
+    try {
+      if (!todoContent || todoContent.trim().length === 0) {
+        throw new ValidationError('todoContent', 'Todo content is required')
+      }
+
+      const prompt = `请分析以下待办事项内容，并提供改进建议：
 
 ${todoContent}
 
@@ -245,34 +752,56 @@ ${todoContent}
 5. 工作负荷是否平衡
 6. 具体的改进建议
 
-请用简洁明了的中文回答。
-`
+请用简洁明了的中文回答。`
 
-    return await this.generateText(prompt, {
-      temperature: 0.6,
-      max_tokens: 800
-    })
+      return await this.generateText(prompt, {
+        temperature: 0.6
+      })
+    } catch (error) {
+      throw new APIError('SUGGESTIONS_FAILED', `Failed to get suggestions: ${error.message}`)
+    }
   }
 
+  // ========================================================================
+  // 工具方法
+  // ========================================================================
+
   /**
-   * 检查API连接状态
-   * @returns {Promise<boolean>} 连接是否正常
+   * 检查 API 连接状态
    */
   async checkConnection() {
     try {
-      const response = await this.generateText('测试连接', {
-        max_tokens: 10,
-        temperature: 0.1
-      })
-      return response && response.length > 0
+      await this.getTextModels()
+      return true
     } catch (error) {
-      console.error('API连接检查失败:', error)
+      console.error('Connection check failed:', error.message)
       return false
     }
   }
+
+  /**
+   * 获取默认模型
+   */
+  getDefaultModel() {
+    return this.defaultModel
+  }
+
+  /**
+   * 设置默认模型
+   */
+  setDefaultModel(model) {
+    Validator.validateTextModel(model)
+    this.defaultModel = model
+  }
 }
 
-// 创建单例实例
+// ============================================================================
+// 导出单例和类
+// ============================================================================
+
+// 创建默认实例
 const pollinationsAPI = new PollinationsAPI()
 
+// 导出类和实例
+export { PollinationsAPI, Validator, ValidationError, APIError }
 export default pollinationsAPI
