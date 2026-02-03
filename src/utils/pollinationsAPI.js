@@ -432,7 +432,7 @@ class PollinationsAPI {
         height = 1024,
         seed = 0,
         nologo = false,
-        private = false,
+        private: privateMode = false,
         enhance = false,
         nofeed = false
       } = options
@@ -444,7 +444,7 @@ class PollinationsAPI {
 
       const params = { model, width, height, seed }
       if (nologo) params.nologo = true
-      if (private) params.private = true
+      if (privateMode) params.private = true
       if (enhance) params.enhance = true
       if (nofeed) params.nofeed = true
 
