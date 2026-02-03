@@ -19,13 +19,13 @@ VITE_POLLINATIONS_API_KEY=sk_your_actual_key_here
 ### 3. 在代码中使用
 
 ```javascript
-import pollinationsAPI from './utils/pollinationsAPI.js'
+import pollinationsAPI from '../utils/pollinationsAPI.js'
 
 // 方式一：使用默认实例（已自动配置）
 const result = await pollinationsAPI.generateText('写一首关于编程的诗')
 
 // 方式二：创建自定义实例
-import { PollinationsAPI } from './utils/pollinationsAPI.js'
+import { PollinationsAPI } from '../utils/pollinationsAPI.js'
 const customAPI = new PollinationsAPI({
   apiKey: 'sk_your_key_here',
   defaultModel: 'gemini'
@@ -39,7 +39,7 @@ const customAPI = new PollinationsAPI({
 #### 1. 简单文本生成
 
 ```javascript
-import pollinationsAPI from './utils/pollinationsAPI.js'
+import pollinationsAPI from '../utils/pollinationsAPI.js'
 
 // 基础用法
 const text = await pollinationsAPI.generateText('什么是人工智能？')
@@ -346,7 +346,7 @@ const sendMessage = async () => {
 ## 错误处理
 
 ```javascript
-import { ValidationError, APIError } from './utils/pollinationsAPI.js'
+import { ValidationError, APIError } from '../utils/pollinationsAPI.js'
 
 try {
   const result = await pollinationsAPI.generateText('')

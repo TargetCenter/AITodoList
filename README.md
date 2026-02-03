@@ -61,20 +61,21 @@
 ```
 src/
 ├── components/     # 可复用组件
-│   ├── AIAssistant.vue    # AI 智能助手组件
-│   └── MonacoEditor.vue   # Monaco 编辑器组件
+│   ├── AIAssistant.vue        # AI 智能助手组件
+│   ├── CodeMirrorEditor.vue    # CodeMirror 编辑器组件
+│   ├── AutoComplete.vue       # 自动补全组件
+│   └── TaskInputPanel.vue     # 任务输入面板
 ├── views/          # 页面视图
-│   ├── TodoEditor.vue  # 待办编辑器
-│   └── TodoGraph.vue   # 关系图展示
+│   ├── main.vue            # 主页
+│   ├── TodoEditor.vue       # 待办编辑器
+│   └── TodoGraph.vue        # 关系图展示
 ├── router/         # 路由配置
 ├── utils/          # 工具函数
-│   ├── pollinationsAPI.js  # Pollinations.ai API 客户端
-│   ├── markdownParser.js   # Markdown解析器
-│   ├── fileManager.js      # 文件管理器
-│   ├── todoLanguage.js     # Monaco 语言定义
-│   ├── todoCompletion.js   # 自动补全
-│   ├── todoHover.js        # 悬停提示
-│   └── todoValidation.js   # 实时验证
+│   ├── pollinationsAPI.js   # Pollinations.ai API 客户端
+│   ├── markdownParser.js    # Markdown解析器
+│   ├── fileManager.js       # 文件管理器
+│   ├── autoCompleteData.js  # 自动补全数据
+│   └── supabaseClient.ts    # Supabase客户端
 └── assets/         # 静态资源
 ```
 
@@ -112,10 +113,9 @@ npm run serve
 
 - [Vue.js 3](https://v3.vuejs.org/)
 - [Vite](https://vitejs.dev/)
-- [Element Plus](https://element-plus.org/)
 - [ECharts](https://echarts.apache.org/)
 - [Tailwind CSS 3](https://tailwindcss.com/)
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/)
+- [CodeMirror 6](https://codemirror.net/) - 代码编辑器
 - [Pollinations.ai](https://pollinations.ai/) - AI 服务提供商
 
 ## 使用说明
@@ -159,7 +159,7 @@ localStorage.setItem('pollinations_api_key', 'sk_你的key')
 - **项目规划** - 根据项目名称和描述，生成完整的项目计划
 - **智能建议** - 分析当前待办事项，提供优化建议
 
-详细使用文档请参考 [POLLINATIONS_API_USAGE.md](POLLINATIONS_API_USAGE.md)
+详细使用文档请参考 [docs/POLLINATIONS_API_USAGE.md](docs/POLLINATIONS_API_USAGE.md)
 
 ## 开发注意事项
 
