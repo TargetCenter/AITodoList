@@ -2,12 +2,18 @@ import { createRouter, createWebHistory } from 'vue-router'
 import TodoEditor from '../views/TodoEditor.vue'
 import TodoGraph from '../views/TodoGraph.vue'
 import Home from  '../views/main.vue'
+import SimpleTodo from '../views/SimpleTodo.vue'
 
 const routes = [
   {
     path: '/',
     name: "home",
     component: Home
+  },
+  {
+    path: '/simple',
+    name: 'SimpleTodo',
+    component: SimpleTodo
   },
   {
     path: '/editor',

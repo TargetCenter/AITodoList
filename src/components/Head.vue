@@ -16,6 +16,8 @@
 
                 <!-- 导航菜单 -->
                 <div class="hidden md:flex items-center space-x-6">
+                    <router-link to="/simple" class="text-gray-600 hover:text-blue-600 transition-colors">简化版</router-link>
+                    <router-link to="/editor" class="text-gray-600 hover:text-blue-600 transition-colors">完整版</router-link>
                     <router-link to="/graph" class="text-gray-600 hover:text-blue-600 transition-colors">图表</router-link>
                 </div>
 

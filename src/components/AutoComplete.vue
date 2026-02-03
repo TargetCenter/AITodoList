@@ -146,21 +146,21 @@ export default {
 <style scoped>
 .autocomplete-popup {
   position: fixed;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   z-index: 1000;
-  min-width: 300px;
-  max-width: 400px;
+  min-width: 280px;
+  max-width: 320px;
   max-height: 300px;
   overflow: hidden;
 }
 
 .autocomplete-header {
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #eee;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -168,12 +168,12 @@ export default {
 }
 
 .autocomplete-header span:first-child {
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .hint {
-  color: #666;
+  color: #6b7280;
   font-size: 11px;
 }
 
@@ -185,13 +185,16 @@ export default {
 .autocomplete-item {
   padding: 10px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s ease;
 }
 
-.autocomplete-item:hover,
+.autocomplete-item:hover {
+  background-color: #f3f4f6;
+}
+
 .autocomplete-item.active {
-  background-color: #e6f7ff;
+  background-color: #dbeafe;
 }
 
 .autocomplete-item:last-child {
@@ -199,14 +202,15 @@ export default {
 }
 
 .item-label {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
   margin-bottom: 2px;
 }
 
 .item-description {
   font-size: 12px;
-  color: #666;
+  color: #6b7280;
   line-height: 1.4;
 }
 
@@ -216,15 +220,15 @@ export default {
 }
 
 .autocomplete-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f3f4f6;
 }
 
 .autocomplete-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 .autocomplete-list::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #9ca3af;
 }
 </style>
