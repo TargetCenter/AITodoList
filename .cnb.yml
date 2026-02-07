@@ -41,4 +41,4 @@ main:
         - https://cnb.cool/zhenxijs/privet/-/blob/main/github.yml
       stages:
         - name: 同仓库到GitHUB
-          script: bash /workspace/sync_to_github.sh
+          script: bash /workspace/.ide/sync_to_github.sh
